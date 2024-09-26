@@ -1,0 +1,32 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Buscar Viaje</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <ion-item>
+    <ion-label>Selecciona tu sede</ion-label>
+    <ion-select [(ngModel)]="sedeSeleccionada" (ionChange)="onSedeChange()">
+      <ion-select-option *ngFor="let sede of sedes" [value]="sede.sede">
+        {{sede.sede}}
+      </ion-select-option>
+    </ion-select>
+  </ion-item>
+
+  <ion-list>
+    <ion-item *ngFor="let viaje of viajesDisponibles">
+      <ion-label>
+        <h2>{{ viaje.origen }} - {{ viaje.destino }}</h2>
+        <p>Fecha: {{ viaje.fecha | date:'dd/MM/yyyy' }} {{ viaje.hora }}</p>
+        <p>Conductor: {{ viaje.conductorNombre }}</p>
+        <p>Patente: {{ viaje.patente }}</p>
+        <p>Asientos disponibles: {{ viaje.asientosDisponibles }}</p>
+        <p>Precio: ${{ viaje.precio }}</p>
+      </ion-label>
+      <ion-button slot="end" (click)="reservarViaje(viaje)" [disabled]="viaje.asientosDisponibles === 0">
+        {{ viaje.asientosDisponibles > 0 ? 'Reservar' : 'No disponible' }}
+      </ion-button>
+    </ion-item>
+  </ion-list>
+</ion-content>

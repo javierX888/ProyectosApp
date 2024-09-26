@@ -1,0 +1,72 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/conductor-dashboard"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Programar Viaje</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <ion-list>
+    <ion-item>
+      <ion-label position="stacked">Sede de Origen</ion-label>
+      <ion-select [(ngModel)]="sedeOrigen" (ionChange)="onSedeChange()">
+        <ion-select-option *ngFor="let sede of sedes" [value]="sede.sede">
+          {{sede.sede}}
+        </ion-select-option>
+      </ion-select>
+    </ion-item>
+
+    <ion-item>
+      <ion-label position="stacked">Región de Origen</ion-label>
+      <ion-input [(ngModel)]="regionOrigen" readonly></ion-input>
+    </ion-item>
+
+    <ion-item>
+      <ion-label position="stacked">Comuna de Destino</ion-label>
+      <ion-select [(ngModel)]="comunaDestino">
+        <ion-select-option *ngFor="let comuna of comunasDestino" [value]="comuna">
+          {{comuna}}
+        </ion-select-option>
+      </ion-select>
+    </ion-item>
+
+    <ion-item>
+      <ion-label position="stacked">Fecha</ion-label>
+      <ion-datetime displayFormat="DD/MM/YYYY" [(ngModel)]="fecha" [min]="fechaMinima"></ion-datetime>
+    </ion-item>
+
+    <ion-item>
+      <ion-label position="stacked">Hora</ion-label>
+      <ion-datetime 
+        displayFormat="HH:mm" 
+        minuteValues="0,30" 
+        [(ngModel)]="hora" 
+        [min]="horaMinima" 
+        [max]="horaMaxima"
+        (ionChange)="onHoraChange($event)">
+      </ion-datetime>
+    </ion-item>
+    <ion-item *ngIf="horaSeleccionada">
+      <ion-label>Hora seleccionada: {{ horaSeleccionada }}</ion-label>
+    </ion-item>
+
+    <ion-item>
+      <ion-label position="stacked">Asientos Disponibles</ion-label>
+      <ion-input type="number" [(ngModel)]="asientosDisponibles"></ion-input>
+    </ion-item>
+
+    <ion-item>
+      <ion-label position="stacked">Precio</ion-label>
+      <ion-input type="number" [(ngModel)]="precio"></ion-input>
+    </ion-item>
+
+    <ion-item>
+      <ion-label position="stacked">Patente del Vehículo</ion-label>
+      <ion-input [(ngModel)]="patente"></ion-input>
+    </ion-item>
+  </ion-list>
+
+  <ion-button expand="block" (click)="programarViaje()">Programar Viaje</ion-button>
+</ion-content>

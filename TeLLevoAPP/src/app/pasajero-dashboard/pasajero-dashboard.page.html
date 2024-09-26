@@ -1,0 +1,18 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Pasajero</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <h2>Bienvenido, {{ username }}</h2>
+
+  <ion-button expand="block" (click)="buscarViaje()">Buscar Viaje</ion-button>
+  
+  <!-- Cambiar el título -->
+  <ion-button expand="block" (click)="verViajesReservados()">Viajes Reservados</ion-button>
+  
+  <ion-button expand="block" (click)="verHistorial()">Historial de Viajes</ion-button>
+  
+  <ion-button expand="block" (click)="cerrarSesion()" color="danger">Cerrar Sesión</ion-button>
+</ion-content>

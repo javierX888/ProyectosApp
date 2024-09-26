@@ -1,0 +1,19 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Conductor</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <h2>Bienvenido, {{ username }}</h2>
+
+  <ion-button expand="block" (click)="programarViaje()">Programar Viaje</ion-button>
+  
+  <!-- Cambiar el título y ajustar el estilo -->
+  <ion-button expand="block" routerLink="/viajes-programados">Viajes Programados</ion-button>
+  
+  <ion-button expand="block" (click)="verHistorial()">Historial de Viajes</ion-button>
+  
+  <!-- Cambiar el color del botón a rojo -->
+  <ion-button expand="block" (click)="cerrarSesion()" color="danger">Cerrar Sesión</ion-button>
+</ion-content>

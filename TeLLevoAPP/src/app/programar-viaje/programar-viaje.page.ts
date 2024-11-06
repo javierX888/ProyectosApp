@@ -1,9 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import { ToastController } from '@ionic/angular';
 import { ViajeService, Viaje } from '../services/viaje.service';
 import { LocationService } from '../services/location.service';
 import { AuthService } from '../services/auth.service';
+import { NgForm } from '@angular/forms';
 
 @Component({
   selector: 'app-programar-viaje',
@@ -11,6 +12,8 @@ import { AuthService } from '../services/auth.service';
   styleUrls: ['./programar-viaje.page.scss'],
 })
 export class ProgramarViajePage implements OnInit {
+  @ViewChild('viajeForm') viajeForm!: NgForm;
+
   // Propiedades para almacenar los datos del viaje
   sedes: any[] = [];
   sedeOrigen: string = '';
@@ -18,15 +21,19 @@ export class ProgramarViajePage implements OnInit {
   comunaDestino: string = '';
   comunasDestino: string[] = [];
   fecha: string = '';
-  hora: string = '';
-  horaSeleccionada: string = '';
-  asientosDisponibles: number = 1;
+  asientosDisponibles: number = 1; 
   precio: number = 0;
   patente: string = '';
-  fechaMinima: string = new Date().toISOString();
-  horaMinima: string = '20:30';
-  horaMaxima: string = '23:00';
-
+  fechaMinima: string = '';
+  vehicles: any[] = [];
+  selectedVehicle: any;
+  showAddVehicleForm: boolean = false;
+  newVehicle: any = {
+    modeloVehiculo: '',
+    patente: '',
+    licencia: ''
+  };
+  
   constructor(
     private router: Router,
     private toastController: ToastController,
@@ -37,14 +44,18 @@ export class ProgramarViajePage implements OnInit {
 
   ngOnInit() {
     this.sedes = this.locationService.getSedes();
-    this.fechaMinima = new Date().toISOString();
-    this.hora = '20:30';
-    this.horaSeleccionada = '20:30';
+    this.fechaMinima = this.getLocalISOTime();
+    this.vehicles = this.authService.getVehicles();
+    if (this.vehicles.length > 0) {
+      this.selectedVehicle = this.vehicles[0];
+    }
   }
 
-  onHoraChange(event: any) {
-    const selectedTime = new Date(event.detail.value);
-    this.horaSeleccionada = selectedTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  // Método para obtener la fecha y hora en ISO local
+  getLocalISOTime(): string {
+    const tzoffset = (new Date()).getTimezoneOffset() * 60000; // Offset en milisegundos
+    const localISOTime = (new Date(Date.now() - tzoffset)).toISOString().slice(0, -1);
+    return localISOTime;
   }
 
   // Método que se ejecuta cuando se cambia la sede de origen
@@ -55,32 +66,56 @@ export class ProgramarViajePage implements OnInit {
   
   // Método para programar un nuevo viaje
   programarViaje() {
-    if (this.sedeOrigen && this.regionOrigen && this.comunaDestino && this.fecha && this.horaSeleccionada && this.asientosDisponibles && this.precio && this.patente) {
-      const nuevoViaje: Viaje = {
-        id: 0, // Se asignará en el servicio
-        origen: this.sedeOrigen,
-        destino: this.comunaDestino,
-        fecha: this.fecha,
-        hora: this.horaSeleccionada,
-        asientosDisponibles: this.asientosDisponibles,
-        precio: this.precio,
-        conductorNombre: this.authService.getUsername(),
-        patente: this.patente,
-        estado: 'disponible'
-      };
-      
-      this.viajeService.programarViaje(nuevoViaje).subscribe(
-        viaje => {
-          this.mostrarToast('Viaje programado con éxito', 'success');
-          this.router.navigate(['/conductor-dashboard']);
-        },
-        error => {
-          this.mostrarToast('Error al programar el viaje', 'danger');
-        }
-      );
-    } else {
-      this.mostrarToast('Por favor, completa todos los campos', 'warning');
+    if (this.viajeForm.invalid) {
+      // Marcar todos los controles como tocados para mostrar mensajes de error
+      Object.keys(this.viajeForm.controls).forEach((field) => {
+        const control = this.viajeForm.controls[field];
+        control.markAsTouched({ onlySelf: true });
+      });
+      this.mostrarToast('Por favor, corrige los errores en el formulario', 'warning');
+      return;
     }
+
+    const nuevoViaje: Viaje = {
+      id: 0, // Se asignará en el servicio
+      origen: this.sedeOrigen,
+      destino: this.comunaDestino,
+      fecha: this.fecha,
+      // hora: this.horaSeleccionada, // Descomenta si usas hora
+      asientosDisponibles: this.asientosDisponibles,
+      precio: this.precio,
+      conductorNombre: this.authService.getUsername(),
+      patente: this.selectedVehicle ? this.selectedVehicle.patente : this.patente,
+      vehiculo: this.selectedVehicle ? this.selectedVehicle : null,
+      conductor: this.authService.getUsername(),
+      estado: 'disponible',
+      pasajeros: [] // Inicializar como array vacío
+    };
+    
+    this.viajeService.programarViaje(nuevoViaje).subscribe(
+      (viaje) => {
+        this.mostrarToast('Viaje programado con éxito', 'success');
+        this.router.navigate(['/conductor-dashboard']);
+      },
+      (error) => {
+        this.mostrarToast('Error al programar el viaje', 'danger');
+      }
+    );
+  }
+
+  // Método para mostrar el formulario de agregar vehículo
+  toggleAddVehicleForm() {
+    this.showAddVehicleForm = !this.showAddVehicleForm;
+  }
+
+  // Método para agregar un nuevo vehículo
+  addVehicle() {
+    this.authService.addVehicle(this.newVehicle);
+    this.vehicles.push(this.newVehicle);
+    this.selectedVehicle = this.newVehicle;
+    this.newVehicle = { modeloVehiculo: '', patente: '', licencia: '' };
+    this.showAddVehicleForm = false;
+    this.mostrarToast('Vehículo agregado con éxito', 'success');
   }
 
   // Método para mostrar mensajes toast

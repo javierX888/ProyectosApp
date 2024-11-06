@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
-import { ToastController } from '@ionic/angular';
+import { LoadingController, ToastController } from '@ionic/angular';
 import { AuthService } from '../services/auth.service';
 
 @Component({
@@ -12,28 +12,48 @@ export class ResetPasswordPage {
   email: string = '';
 
   constructor(
-    private router: Router,
+    private authService: AuthService,
+    private loadingController: LoadingController,
     private toastController: ToastController,
-    private authService: AuthService
-  ) { }
+    private router: Router
+  ) {}
 
   async resetPassword() {
-    if (this.email) {
-      const reset = await this.authService.resetPassword(this.email);
-      if (reset) {
+    if (!this.email.endsWith('@duocuc.cl')) {
+      await this.showToast('Debe usar un correo &#64;duocuc.cl');
+      return;
+    }
+
+    const loading = await this.loadingController.create({
+      message: 'Enviando instrucciones...'
+    });
+    await loading.present();
+
+    try {
+      const success = await this.authService.resetPassword(this.email);
+      await loading.dismiss();
+      if (success) {
+        await this.showToast('Se han enviado las instrucciones a tu correo', 'success');
         this.router.navigate(['/login']);
+      } else {
+        await this.showToast('No se pudo enviar el correo', 'danger');
       }
-    } else {
-      await this.showToast('Por favor, ingresa un correo electrónico válido');
+    } catch (error: any) { // Tipar error como any
+      await loading.dismiss();
+      await this.showToast(
+        error.message || 'Error al enviar las instrucciones',
+        'danger'
+      );
     }
   }
 
-  async showToast(message: string, color: string = 'danger') {
+  private async showToast(message: string, color: string = 'danger') {
     const toast = await this.toastController.create({
-      message: message,
+      message,
       duration: 2000,
-      color: color
+      color,
+      position: 'top'
     });
-    toast.present();
+    await toast.present();
   }
 }

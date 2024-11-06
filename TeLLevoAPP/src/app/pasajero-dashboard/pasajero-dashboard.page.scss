@@ -1,13 +1,162 @@
-ion-content {
-    --background: #f4f4f4;
+:host {
+  ion-content {
+    --background: var(--ion-color-light);
   }
-  
-  h2 {
-    font-size: 24px;
+
+  .viaje-form {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 16px;
+  }
+
+  .form-section {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
     margin-bottom: 20px;
-    color: var(--ion-color-primary);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+
+    h2 {
+      margin: 0 0 20px 0;
+      font-size: 1.2rem;
+      color: var(--ion-color-dark);
+      display: flex;
+      align-items: center;
+      
+      ion-icon {
+        margin-right: 10px;
+        font-size: 24px;
+        color: var(--ion-color-primary);
+      }
+    }
+
+    ion-item {
+      --background: transparent;
+      --padding-start: 0;
+      --inner-padding-end: 0;
+      --border-color: var(--ion-color-light);
+      margin-bottom: 16px;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+      ion-label {
+        --color: var(--ion-color-medium);
+        margin-bottom: 8px;
+      }
+
+      ion-input, ion-select, ion-datetime {
+        --padding-start: 16px;
+        --padding-end: 16px;
+        --padding-top: 12px;
+        --padding-bottom: 12px;
+        --background: var(--ion-color-light);
+        border-radius: 8px;
+        font-size: 1rem;
+      }
+
+      ion-note {
+        font-size: 0.85rem;
+        
+        &[slot="error"] {
+          color: var(--ion-color-danger);
+        }
+        
+        &[slot="helper"] {
+          color: var(--ion-color-medium);
+        }
+      }
+    }
   }
-  
-  ion-button {
-    margin-bottom: 10px;
+
+  // Estilos específicos para el datetime
+  ion-datetime {
+    --background: var(--ion-color-light);
+    border-radius: 8px;
+    margin-top: 8px;
+    
+    &::part(calendar-day) {
+      color: var(--ion-color-dark);
+    }
+
+    &::part(calendar-day):hover {
+      background: var(--ion-color-primary-tint);
+      color: white;
+    }
+
+    &::part(calendar-day selected) {
+      background: var(--ion-color-primary);
+      color: white;
+    }
   }
+
+  // Botón de envío
+  .submit-button {
+    margin-top: 24px;
+    margin-bottom: 24px;
+    height: 48px;
+    --border-radius: 12px;
+    font-weight: 500;
+
+    ion-icon {
+      margin-right: 8px;
+      font-size: 20px;
+    }
+
+    &[disabled] {
+      --opacity: 0.7;
+    }
+  }
+
+  // Footer de ayuda
+  .footer-help {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    background: var(--ion-color-light);
+    gap: 8px;
+
+    ion-icon {
+      font-size: 24px;
+    }
+
+    span {
+      color: var(--ion-color-medium);
+      font-size: 0.9rem;
+    }
+  }
+
+  // Animaciones
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .form-section {
+    animation: slideIn 0.3s ease-out forwards;
+  }
+
+  // Responsive
+  @media (max-width: 768px) {
+    .viaje-form {
+      padding: 12px;
+    }
+
+    .form-section {
+      padding: 16px;
+      margin-bottom: 16px;
+
+      h2 {
+        font-size: 1.1rem;
+      }
+    }
+  }
+}

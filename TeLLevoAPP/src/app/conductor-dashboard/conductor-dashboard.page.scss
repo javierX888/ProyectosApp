@@ -1,13 +1,190 @@
-ion-content {
-    --background: #f4f4f4;
+:host {
+  ion-content {
+    --background: var(--ion-color-light);
   }
-  
-  h2 {
-    font-size: 24px;
+
+  // Welcome Header
+  .welcome-header {
+    background: var(--ion-color-primary);
+    color: white;
+    padding: 20px;
+    border-radius: 0 0 20px 20px;
     margin-bottom: 20px;
-    color: var(--ion-color-primary);
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+
+      ion-avatar {
+        width: 60px;
+        height: 60px;
+        background: rgba(255, 255, 255, 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        .avatar-icon {
+          font-size: 30px;
+          color: white;
+        }
+      }
+
+      .user-details {
+        h1 {
+          margin: 0;
+          font-size: 1.5rem;
+          font-weight: 600;
+        }
+
+        p {
+          margin: 5px 0 0;
+          opacity: 0.8;
+          font-size: 0.9rem;
+        }
+      }
+    }
   }
-  
-  ion-button {
-    margin-bottom: 10px;
+
+  // Stats Grid
+  .stats-grid {
+    margin-top: -40px;
+    padding: 0 10px;
+
+    .stat-card {
+      background: white;
+      border-radius: 15px;
+      padding: 20px;
+      text-align: center;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      height: 100%;
+
+      ion-icon {
+        font-size: 30px;
+        margin-bottom: 10px;
+      }
+
+      h3 {
+        margin: 10px 0;
+        font-size: 24px;
+        font-weight: 600;
+        color: var(--ion-color-dark);
+      }
+
+      p {
+        margin: 0;
+        color: var(--ion-color-medium);
+        font-size: 14px;
+      }
+    }
   }
+
+  // Main Actions
+  .main-actions {
+    padding: 20px;
+
+    .action-button {
+      --border-radius: 10px;
+      margin: 10px 0;
+      height: 50px;
+      font-weight: 500;
+
+      ion-icon {
+        margin-right: 8px;
+      }
+    }
+  }
+
+  // Viajes Section
+  .viajes-section {
+    background: white;
+    border-radius: 20px;
+    margin: 10px;
+    padding: 20px;
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+
+      h2 {
+        margin: 0;
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: var(--ion-color-dark);
+      }
+    }
+  }
+
+  // FAB Menu
+  ion-fab {
+    ion-fab-button {
+      --box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    ion-fab-list {
+      ion-fab-button {
+        --background: var(--ion-color-light);
+        --color: var(--ion-color-dark);
+      }
+    }
+  }
+
+  // Footer Tabs
+  ion-tab-bar {
+    --background: white;
+    padding: 5px 0;
+    box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.1);
+
+    ion-tab-button {
+      --color: var(--ion-color-medium);
+      --color-selected: var(--ion-color-primary);
+
+      ion-icon {
+        font-size: 24px;
+      }
+
+      ion-label {
+        font-size: 12px;
+      }
+    }
+  }
+
+  // Animations
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .welcome-header, .stats-grid, .main-actions, .viajes-section {
+    animation: fadeIn 0.5s ease-out forwards;
+  }
+
+  // Responsive adjustments
+  @media (max-width: 768px) {
+    .welcome-header {
+      .user-info {
+        .user-details {
+          h1 {
+            font-size: 1.3rem;
+          }
+        }
+      }
+    }
+
+    .stats-grid {
+      .stat-card {
+        h3 {
+          font-size: 20px;
+        }
+      }
+    }
+  }
+}

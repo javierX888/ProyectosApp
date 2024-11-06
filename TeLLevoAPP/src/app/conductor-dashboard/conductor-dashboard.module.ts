@@ -4,15 +4,18 @@ import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 import { ConductorDashboardPageRoutingModule } from './conductor-dashboard-routing.module';
 import { ConductorDashboardPage } from './conductor-dashboard.page';
-import { ViajesConductorComponent } from '../viajes-conductor.component';
+import { SharedModule } from '../shared/shared.module';
 
 @NgModule({
   imports: [
     CommonModule,
     FormsModule,
     IonicModule,
-    ConductorDashboardPageRoutingModule
+    ConductorDashboardPageRoutingModule,
+    SharedModule
   ],
-  declarations: [ConductorDashboardPage, ViajesConductorComponent]
+  declarations: [
+    ConductorDashboardPage
+  ]
 })
 export class ConductorDashboardPageModule {}

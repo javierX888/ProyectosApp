@@ -1,21 +1,141 @@
 <ion-header>
-  <ion-toolbar>
+  <ion-toolbar color="primary">
     <ion-buttons slot="start">
       <ion-back-button defaultHref="/conductor-dashboard"></ion-back-button>
     </ion-buttons>
     <ion-title>Viajes Programados</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="cargarViajesProgramados()">
+        <ion-icon name="refresh-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+
+  <ion-toolbar color="light">
+    <ion-segment [(ngModel)]="filtroEstado" (ionChange)="filtrarViajes()">
+      <ion-segment-button value="todos">
+        <ion-label>Todos</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="disponible">
+        <ion-label>Disponibles</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="reservado">
+        <ion-label>Reservados</ion-label>
+      </ion-segment-button>
+    </ion-segment>
   </ion-toolbar>
 </ion-header>
 
-<ion-content class="ion-padding">
-  <ion-list>
-    <ion-item *ngFor="let viaje of viajesProgramados">
-      <ion-label>
-        <h2>{{ viaje.origen }} - {{ viaje.destino }}</h2>
-        <p>Fecha: {{ viaje.fecha }} {{ viaje.hora }}</p>
-        <p>Asientos disponibles: {{ viaje.asientosDisponibles }}</p>
-        <p>Precio: ${{ viaje.precio }}</p>
-      </ion-label>
-    </ion-item>
-  </ion-list>
+<ion-content>
+  <!-- Pull to refresh -->
+  <ion-refresher slot="fixed" (ionRefresh)="doRefresh($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <!-- Lista de viajes -->
+  <div class="viajes-container">
+    <ng-container *ngIf="historialViajesFiltrados.length > 0; else noViajes">
+      <ion-list>
+        <ion-item-sliding *ngFor="let viaje of historialViajesFiltrados">
+          <ion-item>
+            <ion-card class="viaje-card">
+              <ion-card-content>
+                <!-- Header del viaje -->
+                <div class="viaje-header">
+                  <div class="ruta-info">
+                    <h2>{{viaje.origen}} → {{viaje.destino}}</h2>
+                    <p class="fecha">
+                      <ion-icon name="calendar-outline"></ion-icon>
+                      {{viaje.fecha | date:'dd/MM/yyyy'}} - {{viaje.hora}}
+                    </p>
+                  </div>
+                  <ion-badge [color]="getEstadoColor(viaje.estado)">
+                    {{viaje.estado | titlecase}}
+                  </ion-badge>
+                </div>
+
+                <!-- Detalles del viaje -->
+                <div class="viaje-detalles">
+                  <div class="info-item">
+                    <ion-icon name="cash-outline"></ion-icon>
+                    <span>${{viaje.precio}}</span>
+                  </div>
+                  <div class="info-item">
+                    <ion-icon name="people-outline"></ion-icon>
+                    <span>{{viaje.asientosDisponibles}} asientos</span>
+                  </div>
+                  <div class="info-item" *ngIf="viaje.patente">
+                    <ion-icon name="car-outline"></ion-icon>
+                    <span>{{viaje.patente}}</span>
+                  </div>
+                </div>
+
+                <!-- Pasajeros (si hay) -->
+                <div class="pasajeros-list" *ngIf="(viaje.pasajeros?.length ?? 0) > 0">
+                  <h3>Pasajeros</h3>
+                  <ion-chip *ngFor="let pasajero of viaje.pasajeros">
+                    <ion-avatar>
+                      <ion-icon name="person-outline"></ion-icon>
+                    </ion-avatar>
+                    <ion-label>{{pasajero}}</ion-label>
+                  </ion-chip>
+                </div>
+
+                <!-- Botones de acción -->
+                <div class="viaje-acciones">
+                  <ion-button 
+                    *ngIf="viaje.estado === 'reservado'"
+                    color="success" 
+                    expand="block"
+                    (click)="confirmarViaje(viaje)">
+                    <ion-icon name="checkmark-circle-outline" slot="start"></ion-icon>
+                    Confirmar Viaje
+                  </ion-button>
+
+                  <ion-button 
+                    color="danger" 
+                    fill="outline" 
+                    expand="block"
+                    (click)="cancelarViaje(viaje)">
+                    <ion-icon name="close-circle-outline" slot="start"></ion-icon>
+                    Cancelar Viaje
+                  </ion-button>
+                </div>
+              </ion-card-content>
+            </ion-card>
+          </ion-item>
+
+          <!-- Opciones deslizables -->
+          <ion-item-options side="end">
+            <ion-item-option color="primary" (click)="editarViaje(viaje)">
+              <ion-icon name="create-outline" slot="icon-only"></ion-icon>
+            </ion-item-option>
+            <ion-item-option color="danger" (click)="cancelarViaje(viaje)">
+              <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
+            </ion-item-option>
+          </ion-item-options>
+        </ion-item-sliding>
+      </ion-list>
+    </ng-container>
+
+    <!-- Mensaje cuando no hay viajes -->
+    <ng-template #noViajes>
+      <div class="no-viajes">
+        <ion-icon name="car-outline"></ion-icon>
+        <h3>No hay viajes programados</h3>
+        <p>¡Programa tu primer viaje!</p>
+        <ion-button expand="block" routerLink="/programar-viaje" class="ion-margin">
+          <ion-icon name="add-outline" slot="start"></ion-icon>
+          Programar Viaje
+        </ion-button>
+      </div>
+    </ng-template>
+  </div>
+
+  <!-- Fab button para programar nuevo viaje -->
+  <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+    <ion-fab-button routerLink="/programar-viaje">
+      <ion-icon name="add"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
 </ion-content>

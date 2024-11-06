@@ -1,17 +1,120 @@
 <ion-header>
-  <ion-toolbar>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/"></ion-back-button>
+    </ion-buttons>
     <ion-title>Historial de Viajes</ion-title>
+  </ion-toolbar>
+  <ion-toolbar color="light">
+    <ion-segment [(ngModel)]="filtroEstado" (ionChange)="filtrarViajes()">
+      <ion-segment-button value="todos">
+        <ion-label>Todos</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="completado">
+        <ion-label>Completados</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="cancelado">
+        <ion-label>Cancelados</ion-label>
+      </ion-segment-button>
+    </ion-segment>
   </ion-toolbar>
 </ion-header>
 
-<ion-content class="ion-padding">
-  <ion-list>
-    <ion-item *ngFor="let viaje of historialViajes">
-      <ion-label>
-        <h2>{{ viaje.origen }} - {{ viaje.destino }}</h2>
-        <p>Fecha: {{ viaje.fecha | date:'short' }}</p>
-        <p>Estado: {{ viaje.estado }}</p>
-      </ion-label>
-    </ion-item>
-  </ion-list>
+<ion-content>
+  <!-- Pull to refresh -->
+  <ion-refresher slot="fixed" (ionRefresh)="doRefresh($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <!-- Lista de viajes -->
+  <ng-container *ngIf="historialViajes.length > 0; else noViajes">
+    <ion-list>
+      <ion-item-sliding *ngFor="let viaje of historialViajesFiltrados">
+        <ion-item>
+          <ion-card class="viaje-card">
+            <ion-card-content>
+              <!-- Encabezado del viaje -->
+              <div class="viaje-header">
+                <div class="ruta-info">
+                  <h2>{{viaje.origen}} → {{viaje.destino}}</h2>
+                  <p class="fecha">
+                    <ion-icon name="calendar-outline"></ion-icon>
+                    {{viaje.fecha | date:'dd/MM/yyyy HH:mm'}}
+                  </p>
+                </div>
+                <ion-badge [color]="getEstadoColor(viaje.estado)">
+                  {{viaje.estado | titlecase}}
+                </ion-badge>
+              </div>
+
+              <!-- Detalles del viaje -->
+              <div class="viaje-detalles">
+                <div class="info-item">
+                  <ion-icon name="cash-outline"></ion-icon>
+                  <span>${{viaje.precio}}</span>
+                </div>
+                <div class="info-item">
+                  <ion-icon name="people-outline"></ion-icon>
+                  <span>{{viaje.asientosDisponibles}} asientos</span>
+                </div>
+              </div>
+
+              <!-- Información del conductor/pasajero -->
+              <div class="usuario-info">
+                <ion-avatar>
+                  <ion-icon name="person-circle-outline"></ion-icon>
+                </ion-avatar>
+                <div class="detalles">
+                  <h3>{{esconductor ? viaje.pasajeroNombre : viaje.conductorNombre}}</h3>
+                  <p *ngIf="viaje.patente">Patente: {{viaje.patente}}</p>
+                </div>
+              </div>
+            </ion-card-content>
+          </ion-card>
+        </ion-item>
+
+        <!-- Opciones deslizables -->
+        <ion-item-options side="end">
+          <ion-item-option color="primary" (click)="verDetalles(viaje)">
+            <ion-icon name="information-circle-outline" slot="icon-only"></ion-icon>
+          </ion-item-option>
+          <ion-item-option color="success" (click)="contactarUsuario(viaje)">
+            <ion-icon name="chatbubble-outline" slot="icon-only"></ion-icon>
+          </ion-item-option>
+        </ion-item-options>
+      </ion-item-sliding>
+    </ion-list>
+  </ng-container>
+
+  <!-- Mensaje cuando no hay viajes -->
+  <ng-template #noViajes>
+    <div class="no-viajes">
+      <ion-icon name="car-outline"></ion-icon>
+      <h3>No hay viajes en tu historial</h3>
+      <p>Cuando realices viajes, aparecerán aquí</p>
+      <ion-button expand="block" class="ion-margin" [routerLink]="esconductor ? '/programar-viaje' : '/buscar-viaje'">
+        {{ esController ? 'Programar un Viaje' : 'Buscar un Viaje' }}
+      </ion-button>
+    </div>
+  </ng-template>
 </ion-content>
+
+<!-- Footer con estadísticas -->
+<ion-footer *ngIf="historialViajes.length > 0" class="ion-no-border">
+  <ion-toolbar>
+    <ion-row class="estadisticas">
+      <ion-col>
+        <div class="stat-item">
+          <span class="numero">{{totalViajes}}</span>
+          <span class="etiqueta">Total Viajes</span>
+        </div>
+      </ion-col>
+      <ion-col>
+        <div class="stat-item">
+          <span class="numero">${{totalGastado}}</span>
+          <span class="etiqueta">{{ esController ? 'Ganado' : 'Gastado' }}</span>
+        </div>
+      </ion-col>
+    </ion-row>
+  </ion-toolbar>
+</ion-footer>

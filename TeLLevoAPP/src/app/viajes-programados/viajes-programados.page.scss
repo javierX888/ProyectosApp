@@ -1,9 +1,229 @@
-ion-content {
-    --background: #f4f4f4;
+:host {
+  ion-content {
+    --background: var(--ion-color-light);
   }
-  
-  ion-item {
-    --background: #ffffff;
-    margin-bottom: 10px;
-    border-radius: 5px;
+
+  // Segmento de filtros
+  ion-segment {
+    padding: 5px;
+    
+    ion-segment-button {
+      --color: var(--ion-color-medium);
+      --color-checked: var(--ion-color-primary);
+      --indicator-color: var(--ion-color-primary);
+    }
   }
+
+  // Contenedor principal
+  .viajes-container {
+    padding: 16px;
+  }
+
+  // Tarjeta de viaje
+  .viaje-card {
+    margin: 0;
+    border-radius: 15px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+
+    ion-card-content {
+      padding: 16px;
+    }
+
+    .viaje-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 15px;
+
+      .ruta-info {
+        h2 {
+          margin: 0;
+          font-size: 1.1rem;
+          font-weight: 600;
+          color: var(--ion-color-dark);
+        }
+
+        .fecha {
+          display: flex;
+          align-items: center;
+          color: var(--ion-color-medium);
+          font-size: 0.9rem;
+          margin: 5px 0 0;
+
+          ion-icon {
+            margin-right: 5px;
+            font-size: 16px;
+          }
+        }
+      }
+
+      ion-badge {
+        padding: 6px 12px;
+        border-radius: 12px;
+        text-transform: capitalize;
+      }
+    }
+
+    .viaje-detalles {
+      display: flex;
+      gap: 20px;
+      margin: 15px 0;
+      padding: 10px 0;
+      border-top: 1px solid var(--ion-color-light);
+      border-bottom: 1px solid var(--ion-color-light);
+
+      .info-item {
+        display: flex;
+        align-items: center;
+        color: var(--ion-color-medium);
+
+        ion-icon {
+          margin-right: 8px;
+          font-size: 20px;
+        }
+
+        span {
+          font-size: 0.95rem;
+        }
+      }
+    }
+
+    .pasajeros-list {
+      margin-top: 15px;
+
+      h3 {
+        margin: 0 0 10px 0;
+        font-size: 1rem;
+        color: var(--ion-color-dark);
+      }
+
+      ion-chip {
+        margin: 4px;
+
+        ion-avatar {
+          width: 24px;
+          height: 24px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: var(--ion-color-light);
+
+          ion-icon {
+            font-size: 16px;
+            color: var(--ion-color-medium);
+          }
+        }
+      }
+    }
+
+    .viaje-acciones {
+      margin-top: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+
+      ion-button {
+        margin: 0;
+        height: 40px;
+      }
+    }
+  }
+
+  // Mensaje de no viajes
+  .no-viajes {
+    text-align: center;
+    padding: 40px 20px;
+
+    ion-icon {
+      font-size: 64px;
+      color: var(--ion-color-medium);
+      margin-bottom: 16px;
+    }
+
+    h3 {
+      margin: 0;
+      font-size: 1.2rem;
+      color: var(--ion-color-dark);
+    }
+
+    p {
+      margin: 8px 0 24px;
+      color: var(--ion-color-medium);
+      font-size: 0.9rem;
+    }
+
+    ion-button {
+      max-width: 300px;
+      margin: 0 auto;
+    }
+  }
+
+  // Opciones deslizables
+  ion-item-sliding {
+    background: transparent;
+    margin-bottom: 12px;
+
+    ion-item {
+      --padding-start: 0;
+      --inner-padding-end: 0;
+      --background: transparent;
+
+      &::part(native) {
+        padding: 0;
+      }
+    }
+
+    ion-item-options {
+      border-radius: 0 15px 15px 0;
+
+      ion-item-option {
+        font-size: 18px;
+      }
+    }
+  }
+
+  // FAB button
+  ion-fab {
+    ion-fab-button {
+      --box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
+  }
+
+  // Animaciones
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .viaje-card {
+    animation: slideIn 0.3s ease-out forwards;
+  }
+
+  // Responsive
+  @media (max-width: 768px) {
+    .viajes-container {
+      padding: 12px;
+    }
+
+    .viaje-card {
+      .viaje-header {
+        flex-direction: column;
+
+        ion-badge {
+          margin-top: 10px;
+        }
+      }
+
+      .viaje-detalles {
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+    }
+  }
+}

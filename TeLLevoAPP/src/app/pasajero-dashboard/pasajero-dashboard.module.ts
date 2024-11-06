@@ -1,25 +1,21 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-
 import { IonicModule } from '@ionic/angular';
-
 import { PasajeroDashboardPageRoutingModule } from './pasajero-dashboard-routing.module';
-
 import { PasajeroDashboardPage } from './pasajero-dashboard.page';
-
-import { ViajesPasajeroComponent } from '../viajes-pasajero.component';
+import { SharedModule } from '../shared/shared.module';
 
 @NgModule({
   imports: [
     CommonModule,
     FormsModule,
     IonicModule,
-    PasajeroDashboardPageRoutingModule
+    PasajeroDashboardPageRoutingModule,
+    SharedModule
   ],
   declarations: [
-    PasajeroDashboardPage,
-    ViajesPasajeroComponent
+    PasajeroDashboardPage
   ],
 })
 export class PasajeroDashboardPageModule {}

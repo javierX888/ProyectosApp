@@ -1,72 +1,175 @@
 <ion-header>
   <ion-toolbar>
-    <ion-buttons slot="start">
-      <ion-back-button defaultHref="/conductor-dashboard"></ion-back-button>
-    </ion-buttons>
     <ion-title>Programar Viaje</ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content class="ion-padding">
-  <ion-list>
-    <ion-item>
-      <ion-label position="stacked">Sede de Origen</ion-label>
-      <ion-select [(ngModel)]="sedeOrigen" (ionChange)="onSedeChange()">
-        <ion-select-option *ngFor="let sede of sedes" [value]="sede.sede">
-          {{sede.sede}}
-        </ion-select-option>
-      </ion-select>
-    </ion-item>
+<ion-content>
+  <form #viajeForm="ngForm" (ngSubmit)="programarViaje()">
+    <ion-list>
+      <!-- Sede de Origen -->
+      <ion-item>
+        <ion-label position="stacked">Sede de Origen</ion-label>
+        <ion-select
+          [(ngModel)]="sedeOrigen"
+          name="sedeOrigen"
+          required
+          #sedeOrigenRef="ngModel"
+          (ionChange)="onSedeChange()"
+        >
+          <ion-select-option *ngFor="let sede of sedes" [value]="sede.sede">
+            {{ sede.sede }}
+          </ion-select-option>
+        </ion-select>
+      </ion-item>
+      <ion-note
+        slot="error"
+        color="danger"
+        *ngIf="sedeOrigenRef.invalid && sedeOrigenRef.touched"
+      >
+        La sede de origen es obligatoria.
+      </ion-note>
 
-    <ion-item>
-      <ion-label position="stacked">Región de Origen</ion-label>
-      <ion-input [(ngModel)]="regionOrigen" readonly></ion-input>
-    </ion-item>
+      <!-- Región de Origen (solo lectura) -->
+      <ion-item>
+        <ion-label position="stacked">Región de Origen</ion-label>
+        <ion-input [(ngModel)]="regionOrigen" name="regionOrigen" readonly></ion-input>
+      </ion-item>
 
-    <ion-item>
-      <ion-label position="stacked">Comuna de Destino</ion-label>
-      <ion-select [(ngModel)]="comunaDestino">
-        <ion-select-option *ngFor="let comuna of comunasDestino" [value]="comuna">
-          {{comuna}}
-        </ion-select-option>
-      </ion-select>
-    </ion-item>
+      <!-- Comuna de Destino -->
+      <ion-item>
+        <ion-label position="stacked">Comuna de Destino</ion-label>
+        <ion-select
+          [(ngModel)]="comunaDestino"
+          name="comunaDestino"
+          required
+          #comunaDestinoRef="ngModel"
+        >
+          <ion-select-option *ngFor="let comuna of comunasDestino" [value]="comuna">
+            {{ comuna }}
+          </ion-select-option>
+        </ion-select>
+      </ion-item>
+      <ion-note
+        slot="error"
+        color="danger"
+        *ngIf="comunaDestinoRef.invalid && comunaDestinoRef.touched"
+      >
+        La comuna de destino es obligatoria.
+      </ion-note>
 
-    <ion-item>
-      <ion-label position="stacked">Fecha</ion-label>
-      <ion-datetime displayFormat="DD/MM/YYYY" [(ngModel)]="fecha" [min]="fechaMinima"></ion-datetime>
-    </ion-item>
+      <!-- Fecha -->
+      <ion-item>
+        <ion-label position="stacked">Fecha</ion-label>
+        <ion-datetime
+          display-format="DD/MM/YYYY"
+          [(ngModel)]="fecha"
+          name="fecha"
+          required
+          [min]="fechaMinima"
+          #fechaRef="ngModel"
+        ></ion-datetime>
+      </ion-item>
+      <ion-note
+        slot="error"
+        color="danger"
+        *ngIf="fechaRef.invalid && fechaRef.touched"
+      >
+        La fecha es obligatoria.
+      </ion-note>
 
-    <ion-item>
-      <ion-label position="stacked">Hora</ion-label>
-      <ion-datetime 
-        displayFormat="HH:mm" 
-        minuteValues="0,30" 
-        [(ngModel)]="hora" 
-        [min]="horaMinima" 
-        [max]="horaMaxima"
-        (ionChange)="onHoraChange($event)">
-      </ion-datetime>
-    </ion-item>
-    <ion-item *ngIf="horaSeleccionada">
-      <ion-label>Hora seleccionada: {{ horaSeleccionada }}</ion-label>
-    </ion-item>
+      <!-- Separación entre Fecha y Hora -->
+      <ion-item-divider></ion-item-divider>
 
-    <ion-item>
-      <ion-label position="stacked">Asientos Disponibles</ion-label>
-      <ion-input type="number" [(ngModel)]="asientosDisponibles"></ion-input>
-    </ion-item>
+      <!-- Asientos Disponibles -->
+      <ion-item>
+        <ion-label position="stacked">Asientos Disponibles</ion-label>
+        <ion-input
+          type="number"
+          [(ngModel)]="asientosDisponibles"
+          name="asientosDisponibles"
+          required
+          min="1"
+          #asientosDisponiblesRef="ngModel"
+        ></ion-input>
+      </ion-item>
+      <ion-note
+        slot="error"
+        color="danger"
+        *ngIf="asientosDisponiblesRef.invalid && asientosDisponiblesRef.touched"
+      >
+        Debes ingresar al menos un asiento disponible.
+      </ion-note>
 
-    <ion-item>
-      <ion-label position="stacked">Precio</ion-label>
-      <ion-input type="number" [(ngModel)]="precio"></ion-input>
-    </ion-item>
+      <!-- Precio -->
+      <ion-item>
+        <ion-label position="stacked">Precio</ion-label>
+        <ion-input
+          type="number"
+          [(ngModel)]="precio"
+          name="precio"
+          required
+          min="0"
+          #precioRef="ngModel"
+        ></ion-input>
+      </ion-item>
+      <ion-note
+        slot="error"
+        color="danger"
+        *ngIf="precioRef.invalid && precioRef.touched"
+      >
+        El precio es obligatorio y debe ser mayor o igual a cero.
+      </ion-note>
 
-    <ion-item>
-      <ion-label position="stacked">Patente del Vehículo</ion-label>
-      <ion-input [(ngModel)]="patente"></ion-input>
-    </ion-item>
-  </ion-list>
+      <!-- Selección de vehículo -->
+      <ion-item>
+        <ion-label>Vehículo</ion-label>
+        <ion-select [(ngModel)]="selectedVehicle" name="selectedVehicle" interface="action-sheet" required>
+          <ion-select-option *ngFor="let vehicle of vehicles" [value]="vehicle">
+            {{ vehicle.modeloVehiculo }} - {{ vehicle.patente }}
+          </ion-select-option>
+        </ion-select>
+      </ion-item>
+      <ion-note
+        slot="error"
+        color="danger"
+        *ngIf="selectedVehicle === null || selectedVehicle === undefined"
+      >
+        Debes seleccionar un vehículo.
+      </ion-note>
 
-  <ion-button expand="block" (click)="programarViaje()">Programar Viaje</ion-button>
+      <!-- Botón para agregar nuevo vehículo -->
+      <ion-button (click)="toggleAddVehicleForm()" expand="block" fill="outline">
+        <ion-icon name="car-outline" slot="start"></ion-icon>
+        {{ showAddVehicleForm ? 'Cancelar' : 'Agregar Nuevo Vehículo' }}
+      </ion-button>
+
+      <!-- Formulario para agregar nuevo vehículo -->
+      <div *ngIf="showAddVehicleForm">
+        <ion-item>
+          <ion-label position="floating">Modelo del Vehículo</ion-label>
+          <ion-input [(ngModel)]="newVehicle.modeloVehiculo" name="modeloVehiculo"></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-label position="floating">Patente</ion-label>
+          <ion-input [(ngModel)]="newVehicle.patente" name="patente"></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-label position="floating">Licencia</ion-label>
+          <ion-input [(ngModel)]="newVehicle.licencia" name="licencia"></ion-input>
+        </ion-item>
+        <ion-button (click)="addVehicle()" expand="block">
+          Guardar Vehículo
+        </ion-button>
+      </div>
+
+      <!-- Botón de Envío -->
+      <ion-button
+        expand="block"
+        type="submit"
+      >
+        Programar Viaje
+      </ion-button>
+    </ion-list>
+  </form>
 </ion-content>

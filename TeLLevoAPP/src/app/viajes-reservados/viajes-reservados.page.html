@@ -1,18 +1,149 @@
 <ion-header>
-  <ion-toolbar>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/pasajero-dashboard"></ion-back-button>
+    </ion-buttons>
     <ion-title>Viajes Reservados</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="cargarViajesReservados()">
+        <ion-icon name="refresh-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+
+  <ion-toolbar color="light">
+    <ion-segment [(ngModel)]="filtroEstado" (ionChange)="filtrarViajes()">
+      <ion-segment-button value="todos">
+        <ion-label>Todos</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="reservado">
+        <ion-label>Pendientes</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="aceptado">
+        <ion-label>Confirmados</ion-label>
+      </ion-segment-button>
+    </ion-segment>
   </ion-toolbar>
 </ion-header>
 
-<ion-content class="ion-padding">
-  <ion-list>
-    <ion-item *ngFor="let viaje of viajesReservados">
-      <ion-label>
-        <h2>{{ viaje.origen }} - {{ viaje.destino }}</h2>
-        <p>Fecha: {{ viaje.fecha | date:'short' }}</p>
-        <p>Conductor: {{ viaje.conductorNombre }}</p>
-      </ion-label>
-      <ion-button slot="end" (click)="cancelarReserva(viaje.id)">Cancelar</ion-button>
-    </ion-item>
-  </ion-list>
+<ion-content>
+  <!-- Pull to refresh -->
+  <ion-refresher slot="fixed" (ionRefresh)="doRefresh($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <div class="viajes-container">
+    <ng-container *ngIf="viajesFiltrados.length > 0; else noViajes">
+      <ion-list>
+        <ion-item-sliding *ngFor="let viaje of viajesFiltrados">
+          <ion-item>
+            <ion-card class="viaje-card">
+              <ion-card-content>
+                <!-- Header del viaje -->
+                <div class="viaje-header">
+                  <div class="ruta-info">
+                    <h2>{{viaje.origen}} → {{viaje.destino}}</h2>
+                    <p class="fecha">
+                      <ion-icon name="calendar-outline"></ion-icon>
+                      {{viaje.fecha | date:'dd/MM/yyyy'}} - {{viaje.hora}}
+                    </p>
+                  </div>
+                  <ion-badge [color]="getEstadoColor(viaje.estado)">
+                    {{viaje.estado | titlecase}}
+                  </ion-badge>
+                </div>
+
+                <!-- Información del conductor -->
+                <div class="conductor-info">
+                  <ion-avatar>
+                    <ion-icon name="person-circle-outline"></ion-icon>
+                  </ion-avatar>
+                  <div class="conductor-detalles">
+                    <h3>{{viaje.conductorNombre}}</h3>
+                    <p *ngIf="viaje.patente">Patente: {{viaje.patente}}</p>
+                  </div>
+                </div>
+
+                <!-- Detalles del viaje -->
+                <div class="viaje-detalles">
+                  <div class="info-item">
+                    <ion-icon name="cash-outline"></ion-icon>
+                    <span>${{viaje.precio}}</span>
+                  </div>
+                  <div class="info-item">
+                    <ion-icon name="people-outline"></ion-icon>
+                    <span>{{viaje.asientosDisponibles}} asientos restantes</span>
+                  </div>
+                </div>
+
+                <!-- Acciones -->
+                <div class="viaje-acciones">
+                  <ion-button 
+                    *ngIf="viaje.estado === 'reservado'"
+                    expand="block" 
+                    color="danger"
+                    (click)="cancelarReserva(viaje.id)">
+                    <ion-icon name="close-circle-outline" slot="start"></ion-icon>
+                    Cancelar Reserva
+                  </ion-button>
+
+                  <ion-button 
+                    *ngIf="viaje.estado === 'aceptado'"
+                    expand="block" 
+                    color="success"
+                    (click)="verDetallesViaje(viaje)">
+                    <ion-icon name="information-circle-outline" slot="start"></ion-icon>
+                    Ver Detalles
+                  </ion-button>
+                </div>
+              </ion-card-content>
+            </ion-card>
+          </ion-item>
+
+          <!-- Opciones deslizables -->
+          <ion-item-options side="end">
+            <ion-item-option color="primary" (click)="contactarConductor(viaje)">
+              <ion-icon name="chatbubble-outline" slot="icon-only"></ion-icon>
+            </ion-item-option>
+            <ion-item-option color="danger" (click)="cancelarReserva(viaje.id)">
+              <ion-icon name="close-outline" slot="icon-only"></ion-icon>
+            </ion-item-option>
+          </ion-item-options>
+        </ion-item-sliding>
+      </ion-list>
+    </ng-container>
+
+    <!-- Mensaje cuando no hay viajes -->
+    <ng-template #noViajes>
+      <div class="no-viajes">
+        <ion-icon name="car-outline"></ion-icon>
+        <h3>No tienes viajes reservados</h3>
+        <p>¡Reserva un viaje para comenzar!</p>
+        <ion-button expand="block" routerLink="/buscar-viaje" class="ion-margin">
+          <ion-icon name="search-outline" slot="start"></ion-icon>
+          Buscar Viajes
+        </ion-button>
+      </div>
+    </ng-template>
+  </div>
 </ion-content>
+
+<!-- Footer con resumen si hay viajes -->
+<ion-footer *ngIf="viajesReservados.length > 0" class="ion-no-border">
+  <ion-toolbar>
+    <ion-row class="estadisticas">
+      <ion-col>
+        <div class="stat-item">
+          <span class="numero">{{totalViajes}}</span>
+          <span class="etiqueta">Viajes Reservados</span>
+        </div>
+      </ion-col>
+      <ion-col>
+        <div class="stat-item">
+          <span class="numero">${{totalGastado}}</span>
+          <span class="etiqueta">Total Gastado</span>
+        </div>
+      </ion-col>
+    </ion-row>
+  </ion-toolbar>
+</ion-footer>

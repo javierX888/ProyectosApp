@@ -1,32 +1,132 @@
 <ion-header>
-  <ion-toolbar>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/pasajero-dashboard"></ion-back-button>
+    </ion-buttons>
     <ion-title>Buscar Viaje</ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content class="ion-padding">
-  <ion-item>
-    <ion-label>Selecciona tu sede</ion-label>
-    <ion-select [(ngModel)]="sedeSeleccionada" (ionChange)="onSedeChange()">
-      <ion-select-option *ngFor="let sede of sedes" [value]="sede.sede">
-        {{sede.sede}}
-      </ion-select-option>
-    </ion-select>
-  </ion-item>
+<ion-content>
+  <!-- Filtros de búsqueda -->
+  <div class="search-filters ion-padding">
+    <ion-card>
+      <ion-card-content>
+        <!-- Selector de Sede -->
+        <ion-item>
+          <ion-label position="stacked">Sede DuocUC</ion-label>
+          <ion-select [(ngModel)]="filtros.sede" (ionChange)="buscarViajes()">
+            <ion-select-option *ngFor="let sede of sedes" [value]="sede.sede">
+              {{sede.sede}} ({{sede.comuna}})
+            </ion-select-option>
+          </ion-select>
+        </ion-item>
 
-  <ion-list>
-    <ion-item *ngFor="let viaje of viajesDisponibles">
-      <ion-label>
-        <h2>{{ viaje.origen }} - {{ viaje.destino }}</h2>
-        <p>Fecha: {{ viaje.fecha | date:'dd/MM/yyyy' }} {{ viaje.hora }}</p>
-        <p>Conductor: {{ viaje.conductorNombre }}</p>
-        <p>Patente: {{ viaje.patente }}</p>
-        <p>Asientos disponibles: {{ viaje.asientosDisponibles }}</p>
-        <p>Precio: ${{ viaje.precio }}</p>
-      </ion-label>
-      <ion-button slot="end" (click)="reservarViaje(viaje)" [disabled]="viaje.asientosDisponibles === 0">
-        {{ viaje.asientosDisponibles > 0 ? 'Reservar' : 'No disponible' }}
-      </ion-button>
-    </ion-item>
-  </ion-list>
+        <!-- Selector de Fecha -->
+        <ion-item>
+          <ion-label position="stacked">Fecha</ion-label>
+          <ion-datetime
+            display-format="DD/MM/YYYY"
+            picker-format="DD/MM/YYYY"
+            [(ngModel)]="filtros.fecha"
+            [min]="fechaMinima"
+            [max]="fechaMaxima"
+            (ionChange)="buscarViajes()"
+            cancelText="Cancelar"
+            doneText="Aceptar"
+            monthNames="Enero,Febrero,Marzo,Abril,Mayo,Junio,Julio,Agosto,Septiembre,Octubre,Noviembre,Diciembre"
+            monthShortNames="Ene,Feb,Mar,Abr,May,Jun,Jul,Ago,Sep,Oct,Nov,Dic"
+            dayNames="Domingo,Lunes,Martes,Miércoles,Jueves,Viernes,Sábado"
+            dayShortNames="Dom,Lun,Mar,Mié,Jue,Vie,Sáb">
+          </ion-datetime>
+        </ion-item>
+      </ion-card-content>
+    </ion-card>
+  </div>
+
+  <!-- Resultados de búsqueda -->
+  <div class="search-results ion-padding">
+    <!-- Mensaje si no hay resultados -->
+    <div *ngIf="viajes.length === 0" class="no-results">
+      <ion-icon name="car-outline"></ion-icon>
+      <h3>No hay viajes disponibles</h3>
+      <p>Intenta con otros filtros de búsqueda</p>
+    </div>
+
+    <!-- Lista de viajes -->
+    <ion-list *ngIf="viajes.length > 0">
+      <ion-item-sliding *ngFor="let viaje of viajes">
+        <ion-item>
+          <ion-card class="viaje-card">
+            <ion-card-content>
+              <!-- Información del viaje -->
+              <div class="viaje-header">
+                <div class="origen-destino">
+                  <h2>{{viaje.origen}} → {{viaje.destino}}</h2>
+                  <p class="fecha">
+                    <ion-icon name="calendar-outline"></ion-icon>
+                    {{viaje.fecha | date:'dd/MM/yyyy'}}
+                  </p>
+                </div>
+                <div class="precio">
+                  <span class="monto">${{viaje.precio}}</span>
+                  <span class="por-persona">por persona</span>
+                </div>
+              </div>
+
+              <div class="conductor-info">
+                <ion-avatar slot="start">
+                  <ion-icon name="person-circle-outline"></ion-icon>
+                </ion-avatar>
+                <div class="details">
+                  <h3>{{viaje.conductorNombre}}</h3>
+                  <p class="patente" *ngIf="viaje.patente">{{viaje.patente}}</p>
+                </div>
+                <div class="asientos">
+                  <ion-icon name="people-outline"></ion-icon>
+                  <span>{{viaje.asientosDisponibles}} asientos</span>
+                </div>
+              </div>
+
+              <!-- Botón de reserva -->
+              <ion-button 
+                expand="block"
+                [color]="viaje.asientosDisponibles > 0 ? 'success' : 'medium'"
+                [disabled]="viaje.asientosDisponibles === 0"
+                (click)="reservarViaje(viaje)">
+                <ion-icon [name]="viaje.asientosDisponibles > 0 ? 'checkmark-circle-outline' : 'close-circle-outline'" 
+                         slot="start">
+                </ion-icon>
+                {{viaje.asientosDisponibles > 0 ? 'Reservar Asiento' : 'No Disponible'}}
+              </ion-button>
+            </ion-card-content>
+          </ion-card>
+        </ion-item>
+
+        <!-- Opciones deslizables -->
+        <ion-item-options side="end">
+          <ion-item-option color="primary" (click)="verDetalles(viaje)">
+            <ion-icon name="information-circle-outline" slot="icon-only"></ion-icon>
+          </ion-item-option>
+          <ion-item-option color="success" (click)="contactarConductor(viaje)">
+            <ion-icon name="chatbubble-outline" slot="icon-only"></ion-icon>
+          </ion-item-option>
+        </ion-item-options>
+      </ion-item-sliding>
+    </ion-list>
+  </div>
+
+  <!-- Pull to refresh -->
+  <ion-refresher slot="fixed" (ionRefresh)="doRefresh($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
 </ion-content>
+
+<!-- Footer con total de resultados -->
+<ion-footer *ngIf="viajes.length > 0" class="ion-no-border">
+  <ion-toolbar>
+    <ion-text color="medium" class="ion-text-center">
+      {{viajes.length}} viajes encontrados
+    </ion-text>
+  </ion-toolbar>
+</ion-footer>

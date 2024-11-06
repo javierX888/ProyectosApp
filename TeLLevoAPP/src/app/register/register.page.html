@@ -1,30 +1,137 @@
 <ion-header>
-  <ion-toolbar>
-    <ion-title>Registro</ion-title>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Registro en TeLlevoAPP</ion-title>
   </ion-toolbar>
 </ion-header>
 
 <ion-content class="ion-padding">
-  <form (ngSubmit)="onSubmit()">
+  <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+    <div class="ion-text-center">
+      <img src="assets/icon/car-solid.svg" alt="Car Logo" class="logo" />
+      <h2>Crear Cuenta Nueva</h2>
+    </div>
+
+    <!-- Nombre Completo -->
     <ion-item>
-      <ion-label position="floating">Usuario</ion-label>
-      <ion-input type="text" [(ngModel)]="username" name="username" required></ion-input>
+      <ion-label position="floating">Nombre Completo</ion-label>
+      <ion-input type="text" formControlName="nombre"></ion-input>
     </ion-item>
+    <ion-note color="danger" *ngIf="registerForm.get('nombre')?.hasError('required') && registerForm.get('nombre')?.touched">
+      Este campo es requerido.
+    </ion-note>
+    <ion-note color="danger" *ngIf="registerForm.get('nombre')?.hasError('minlength') && registerForm.get('nombre')?.touched">
+      Debe tener al menos 3 caracteres.
+    </ion-note>
+
+    <!-- Email -->
+    <ion-item>
+      <ion-label position="floating">Correo Electrónico</ion-label>
+      <ion-input type="email" formControlName="email"></ion-input>
+    </ion-item>
+    <ion-note color="danger" *ngIf="registerForm.get('email')?.hasError('required') && registerForm.get('email')?.touched">
+      Este campo es requerido.
+    </ion-note>
+    <ion-note color="danger" *ngIf="registerForm.get('email')?.hasError('email') && registerForm.get('email')?.touched">
+      Introduce un correo electrónico válido.
+    </ion-note>
+    <ion-note color="danger" *ngIf="registerForm.get('email')?.hasError('pattern') && registerForm.get('email')?.touched">
+      Debe ser un correo &#64;duocuc.cl.
+    </ion-note>
+
+    <!-- Contraseña -->
     <ion-item>
       <ion-label position="floating">Contraseña</ion-label>
-      <ion-input type="password" [(ngModel)]="password" name="password" required></ion-input>
+      <ion-input [type]="showPassword ? 'text' : 'password'" formControlName="password"></ion-input>
+      <ion-button slot="end" fill="clear" (click)="toggleShowPassword()">
+        <ion-icon [name]="showPassword ? 'eye-off' : 'eye'"></ion-icon>
+      </ion-button>
     </ion-item>
+    <ion-note color="danger" *ngIf="registerForm.get('password')?.hasError('required') && registerForm.get('password')?.touched">
+      Este campo es requerido.
+    </ion-note>
+    <ion-note color="danger" *ngIf="registerForm.get('password')?.hasError('minlength') && registerForm.get('password')?.touched">
+      Debe tener al menos 6 caracteres.
+    </ion-note>
+
+    <!-- Confirmar Contraseña -->
     <ion-item>
       <ion-label position="floating">Confirmar Contraseña</ion-label>
-      <ion-input type="password" [(ngModel)]="confirmPassword" name="confirmPassword" required></ion-input>
+      <ion-input [type]="showPassword ? 'text' : 'password'" formControlName="confirmPassword"></ion-input>
     </ion-item>
-    <ion-item>
-      <ion-label>Tipo de Usuario</ion-label>
-      <ion-select [(ngModel)]="userType" name="userType" required>
-        <ion-select-option value="pasajero">Pasajero</ion-select-option>
-        <ion-select-option value="conductor">Conductor</ion-select-option>
-      </ion-select>
-    </ion-item>
-    <ion-button expand="block" type="submit" class="ion-margin-top">Registrarse</ion-button>
+    <ion-note color="danger" *ngIf="registerForm.get('confirmPassword')?.hasError('required') && registerForm.get('confirmPassword')?.touched">
+      Este campo es requerido.
+    </ion-note>
+    <ion-note color="danger" *ngIf="registerForm.get('confirmPassword')?.hasError('passwordsMismatch') && registerForm.get('confirmPassword')?.touched">
+      Las contraseñas no coinciden.
+    </ion-note>
+
+    <!-- Tipo de Usuario -->
+    <ion-list>
+      <ion-radio-group formControlName="tipo">
+        <ion-list-header>
+          <ion-label>Tipo de Usuario</ion-label>
+        </ion-list-header>
+
+        <ion-item>
+          <ion-label>Pasajero</ion-label>
+          <ion-radio value="pasajero"></ion-radio>
+        </ion-item>
+
+        <ion-item>
+          <ion-label>Conductor</ion-label>
+          <ion-radio value="conductor"></ion-radio>
+        </ion-item>
+      </ion-radio-group>
+    </ion-list>
+
+    <!-- Campos adicionales para conductores -->
+    <div *ngIf="registerForm.get('tipo')?.value === 'conductor'">
+      <!-- Número de Licencia -->
+      <ion-item>
+        <ion-label position="floating">Número de Licencia</ion-label>
+        <ion-input type="text" formControlName="licencia"></ion-input>
+      </ion-item>
+      <ion-note color="danger" *ngIf="registerForm.get('licencia')?.hasError('required') && registerForm.get('licencia')?.touched">
+        Este campo es requerido.
+      </ion-note>
+
+      <!-- Modelo del Vehículo -->
+      <ion-item>
+        <ion-label position="floating">Modelo del Vehículo</ion-label>
+        <ion-input type="text" formControlName="modeloVehiculo"></ion-input>
+      </ion-item>
+      <ion-note color="danger" *ngIf="registerForm.get('modeloVehiculo')?.hasError('required') && registerForm.get('modeloVehiculo')?.touched">
+        Este campo es requerido.
+      </ion-note>
+
+      <!-- Patente -->
+      <ion-item>
+        <ion-label position="floating">Patente</ion-label>
+        <ion-input type="text" formControlName="patente"></ion-input>
+      </ion-item>
+      <ion-note slot="helper">Formato: BBCC22</ion-note>
+      <ion-note color="danger" *ngIf="registerForm.get('patente')?.hasError('required') && registerForm.get('patente')?.touched">
+        Este campo es requerido.
+      </ion-note>
+      <ion-note color="danger" *ngIf="registerForm.get('patente')?.hasError('pattern') && registerForm.get('patente')?.touched">
+        Formato de patente inválido.
+      </ion-note>
+    </div>
+
+    <!-- Botón de Registro -->
+    <ion-button expand="block" type="submit" class="ion-margin-top">
+      Registrarse
+    </ion-button>
+
+    <!-- Link a Login -->
+    <div class="ion-text-center ion-margin-top">
+      <ion-text color="medium">¿Ya tienes una cuenta?</ion-text>
+      <ion-button fill="clear" routerLink="/login">
+        Iniciar Sesión
+      </ion-button>
+    </div>
   </form>
 </ion-content>

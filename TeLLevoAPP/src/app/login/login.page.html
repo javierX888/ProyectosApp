@@ -1,34 +1,61 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>Iniciar Sesión</ion-title>
+  </ion-toolbar>
+</ion-header>
+
 <ion-content class="ion-padding">
-  <div class="login-container">
-    <div class="logo-container">
-      <!-- Aumentar el tamaño del logo -->
-      <img src="assets/icon/car-solid.svg" alt="TeLlevoAPP Logo" class="logo-icon" style="width: 200px; height: 200px;">
-      <h1>TeLlevoAPP</h1>
+  <form [formGroup]="loginForm" (ngSubmit)="onLogin()">
+    <div class="ion-text-center">
+      <img src="assets/icon/car-solid.svg" alt="Car Logo" class="logo" />
+      <h2>Bienvenido de nuevo</h2>
     </div>
 
-    <form (ngSubmit)="onSubmit()">
-      <ion-item>
-        <ion-label position="floating">Usuario</ion-label>
-        <ion-input type="text" [(ngModel)]="username" name="username" required></ion-input>
-      </ion-item>
+    <!-- Correo Electrónico -->
+    <ion-item>
+      <ion-label position="floating">Correo Electrónico</ion-label>
+      <ion-input type="email" formControlName="username"></ion-input>
+    </ion-item>
+    <ion-note color="danger" *ngIf="loginForm.get('username')?.hasError('required') && loginForm.get('username')?.touched">
+      Este campo es requerido.
+    </ion-note>
+    <ion-note color="danger" *ngIf="loginForm.get('username')?.hasError('email') && loginForm.get('username')?.touched">
+      Introduce un correo electrónico válido.
+    </ion-note>
 
-      <ion-item>
-        <ion-label position="floating">Contraseña</ion-label>
-        <ion-input type="password" [(ngModel)]="password" name="password" required></ion-input>
-      </ion-item>
-
-      <ion-button expand="block" type="submit" class="login-button">
-        Iniciar Sesión
+    <!-- Contraseña -->
+    <ion-item>
+      <ion-label position="floating">Contraseña</ion-label>
+      <ion-input [type]="showPassword ? 'text' : 'password'" formControlName="password"></ion-input>
+      <ion-button slot="end" fill="clear" (click)="toggleShowPassword()">
+        <ion-icon [name]="showPassword ? 'eye-off' : 'eye'"></ion-icon>
       </ion-button>
-    </form>
+    </ion-item>
+    <ion-note color="danger" *ngIf="loginForm.get('password')?.hasError('required') && loginForm.get('password')?.touched">
+      Este campo es requerido.
+    </ion-note>
+    <ion-note color="danger" *ngIf="loginForm.get('password')?.hasError('minlength') && loginForm.get('password')?.touched">
+      Debe tener al menos 6 caracteres.
+    </ion-note>
 
-    <div class="additional-options">
-      <ion-button fill="clear" (click)="goToResetPassword()">
-        ¿Olvidaste tu contraseña?
+    <!-- Botón de Inicio de Sesión -->
+    <ion-button expand="block" type="submit" class="ion-margin-top">
+      Iniciar Sesión
+    </ion-button>
+
+    <!-- Enlaces -->
+    <div class="ion-text-center ion-margin-top">
+      <ion-text color="medium">¿Olvidaste tu contraseña?</ion-text>
+      <ion-button fill="clear" size="small" (click)="goToResetPassword()">
+        Restablecer
       </ion-button>
+    </div>
+
+    <div class="ion-text-center ion-margin-top">
+      <ion-text color="medium">¿No tienes una cuenta?</ion-text>
       <ion-button fill="clear" (click)="goToRegister()">
-        ¿No tienes cuenta? Regístrate
+        Regístrate
       </ion-button>
     </div>
-  </div>
+  </form>
 </ion-content>

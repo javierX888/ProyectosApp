@@ -9,7 +9,7 @@ import { AuthService } from './services/auth.service';
       <ion-item *ngFor="let viaje of viajes">
         <ion-label>
           <h2>{{ viaje.origen }} - {{ viaje.destino }}</h2>
-          <p>Fecha: {{ viaje.fecha | date:'dd/MM/yyyy' }} {{ viaje.hora }}</p>
+          <p>Fecha: {{ viaje.fecha | date:'dd/MM/yyyy' }} </p>
           <p>Pasajero: {{ viaje.pasajeroNombre || 'No reservado' }}</p>
           <p>Estado: {{ viaje.estado }}</p>
         </ion-label>

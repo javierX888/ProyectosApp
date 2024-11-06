@@ -10,4 +10,14 @@ ion-content {
   
   ion-button {
     margin-top: 20px;
+
+
+
+  ion-datetime::part(column-day) .calendar-day-name {
+    display: inline-block;
+    width: auto;
+    font-size: 12px; /* Ajusta el tamaño de letra si lo necesitas */
+    text-transform: uppercase; /* Opcional, si quieres todo en mayúsculas */
+  }
+      
   }

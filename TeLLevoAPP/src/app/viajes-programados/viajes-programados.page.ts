@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { ViajeService, Viaje } from '../services/viaje.service';
 import { AuthService } from '../services/auth.service';
-import { LoadingController, ModalController, ToastController, AlertController } from '@ionic/angular';
+import { AlertController, ToastController } from '@ionic/angular';
 
 @Component({
   selector: 'app-viajes-programados',
@@ -9,143 +9,132 @@ import { LoadingController, ModalController, ToastController, AlertController } 
   styleUrls: ['./viajes-programados.page.scss'],
 })
 export class ViajesProgramadosPage implements OnInit {
-  historialViajes: Viaje[] = [];
-  historialViajesFiltrados: Viaje[] = [];
-  filtroEstado: string = 'todos';
-  esconductor: boolean = false;
-  totalViajes: number = 0;
-  totalGastado: number = 0;
+  disponiblesViajes: Viaje[] = [];
+  reservadosViajes: Viaje[] = [];
+  completadosViajes: Viaje[] = [];
+  conductorNombre: string = '';
 
   constructor(
     private viajeService: ViajeService,
-    private authService: AuthService,
-    private loadingController: LoadingController,
-    private modalController: ModalController,
-    private toastController: ToastController,
-    private alertController: AlertController // Si vas a usar alertas
-  ) {
-    this.esconductor = this.authService.getUserType() === 'conductor';
-  }
+    public authService: AuthService,
+    private alertController: AlertController,
+    private toastController: ToastController
+  ) { }
 
   ngOnInit() {
-    this.cargarHistorialViajes();
+    this.conductorNombre = this.authService.getUsername();
+    this.cargarViajesProgramados();
   }
 
-  async cargarHistorialViajes() {
-    const loading = await this.loadingController.create({
-      message: 'Cargando historial...'
-    });
-    await loading.present();
+  cargarViajesProgramados() {
+    // Obtener viajes disponibles
+    this.viajeService.getViajesDisponibles(this.conductorNombre).subscribe(
+      (viajes: Viaje[]) => {
+        this.disponiblesViajes = viajes;
+      },
+      (error) => {
+        console.error('Error al cargar viajes disponibles:', error);
+      }
+    );
 
-    try {
-      const username = this.authService.getUsername();
-      this.viajeService.getHistorialViajes(username).subscribe(
-        viajes => {
-          this.historialViajes = viajes.map(viaje => ({
-            ...viaje,
-            pasajeros: viaje.pasajeros ?? [] // Asegura que pasajeros sea un arreglo
-          }));
-          this.filtrarViajes();
-          this.calcularEstadisticas();
-          loading.dismiss();
-        },
-        error => {
-          console.error('Error al cargar historial:', error);
-          this.mostrarToast('Error al cargar el historial de viajes');
-          loading.dismiss();
-        }
-      );
-    } catch (error: any) { // Tipar error como any
-      console.error('Error:', error);
-      loading.dismiss();
-    }
-  }
+    // Obtener viajes reservados
+    this.viajeService.getViajesReservados(this.conductorNombre).subscribe(
+      (viajes: Viaje[]) => {
+        this.reservadosViajes = viajes;
+      },
+      (error) => {
+        console.error('Error al cargar viajes reservados:', error);
+      }
+    );
 
-  // **Añadir el método `cargarViajesProgramados` llamado en la plantilla**
-  async cargarViajesProgramados() {
-    await this.cargarHistorialViajes();
-  }
-
-  // **Añadir el método `confirmarViaje` llamado en la plantilla**
-  async confirmarViaje(viaje: Viaje) {
-    // Aquí puedes implementar la lógica para confirmar el viaje
-    console.log('Confirmar viaje:', viaje);
-    // Ejemplo de lógica:
-    // viaje.estado = 'completado';
-    // Actualiza el viaje en el servicio o backend
-    // Muestra un mensaje de éxito
-  }
-
-  // **Añadir el método `cancelarViaje` llamado en la plantilla**
-  async cancelarViaje(viaje: Viaje) {
-    // Aquí puedes implementar la lógica para cancelar el viaje
-    console.log('Cancelar viaje:', viaje);
-    // Ejemplo de lógica:
-    // viaje.estado = 'cancelado';
-    // Actualiza el viaje en el servicio o backend
-    // Muestra un mensaje de éxito
-  }
-
-  // **Añadir el método `editarViaje` llamado en la plantilla**
-  async editarViaje(viaje: Viaje) {
-    // Aquí puedes implementar la lógica para editar el viaje
-    console.log('Editar viaje:', viaje);
-    // Podrías abrir un modal o navegar a una página de edición
-  }
-
-  filtrarViajes() {
-    if (this.filtroEstado === 'todos') {
-      this.historialViajesFiltrados = [...this.historialViajes];
-    } else {
-      this.historialViajesFiltrados = this.historialViajes.filter(
-        viaje => viaje.estado === this.filtroEstado
-      );
-    }
-  }
-
-  calcularEstadisticas() {
-    this.totalViajes = this.historialViajes.length;
-    this.totalGastado = this.historialViajes.reduce(
-      (total, viaje) => total + viaje.precio, 
-      0
+    // Obtener viajes completados (opcional)
+    this.viajeService.getViajesCompletados(this.conductorNombre).subscribe(
+      (viajes: Viaje[]) => {
+        this.completadosViajes = viajes;
+      },
+      (error) => {
+        console.error('Error al cargar viajes completados:', error);
+      }
     );
   }
 
-  getEstadoColor(estado: string): string {
-    switch (estado) {
-      case 'completado':
-        return 'success';
-      case 'cancelado':
-        return 'danger';
-      case 'en_curso':
-        return 'warning';
-      default:
-        return 'medium';
-    }
-  }
-
-  async verDetalles(viaje: Viaje) {
-    // Implementar modal de detalles
-    console.log('Ver detalles:', viaje);
-  }
-
-  async contactarUsuario(viaje: Viaje) {
-    // Implementar función de contacto
-    console.log('Contactar usuario:', viaje);
-  }
-
-  async doRefresh(event: any) {
-    await this.cargarHistorialViajes();
-    event.target.complete();
-  }
-
-  private async mostrarToast(mensaje: string, color: string = 'danger') {
-    const toast = await this.toastController.create({
-      message: mensaje,
-      duration: 2000,
-      color: color,
-      position: 'top'
+  // Método para aceptar un viaje reservado
+  async aceptarViaje(viaje: Viaje) {
+    const alert = await this.alertController.create({
+      header: 'Confirmar Aceptación',
+      message: `¿Estás seguro de aceptar el viaje a ${viaje.destino}?`,
+      buttons: [
+        {
+          text: 'Cancelar',
+          role: 'cancel'
+        },
+        {
+          text: 'Aceptar',
+          handler: () => {
+            this.viajeService.aceptarViaje(viaje.id).subscribe(
+              (success: boolean) => {
+                if (success) {
+                  this.presentToast('Viaje aceptado exitosamente.', 'success');
+                  this.cargarViajesProgramados(); // Actualizar la lista
+                } else {
+                  this.presentToast('Error al aceptar el viaje.', 'danger');
+                }
+              },
+              (error) => {
+                console.error('Error al aceptar viaje:', error);
+                this.presentToast('Error al aceptar el viaje.', 'danger');
+              }
+            );
+          }
+        }
+      ]
     });
-    await toast.present();
+
+    await alert.present();
+  }
+
+  // Método para cancelar un viaje reservado
+  async cancelarViaje(viaje: Viaje) {
+    const alert = await this.alertController.create({
+      header: 'Confirmar Cancelación',
+      message: `¿Estás seguro de cancelar el viaje a ${viaje.destino}?`,
+      buttons: [
+        {
+          text: 'Cancelar',
+          role: 'cancel'
+        },
+        {
+          text: 'Cancelar Viaje',
+          handler: () => {
+            this.viajeService.cancelarViaje(viaje.id).subscribe(
+              (success: boolean) => {
+                if (success) {
+                  this.presentToast('Viaje cancelado exitosamente.', 'success');
+                  this.cargarViajesProgramados(); // Actualizar la lista
+                } else {
+                  this.presentToast('Error al cancelar el viaje.', 'danger');
+                }
+              },
+              (error) => {
+                console.error('Error al cancelar viaje:', error);
+                this.presentToast('Error al cancelar el viaje.', 'danger');
+              }
+            );
+          }
+        }
+      ]
+    });
+
+    await alert.present();
+  }
+
+  // Método para mostrar un toast
+  async presentToast(message: string, color: string) {
+    const toast = await this.toastController.create({
+      message,
+      duration: 2000,
+      color
+    });
+    toast.present();
   }
 }

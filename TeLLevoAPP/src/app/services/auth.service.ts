@@ -1,11 +1,28 @@
 import { Injectable } from '@angular/core';
 import { ToastController } from '@ionic/angular';
+import { environment } from 'src/environments/environment';
 
 @Injectable({
   providedIn: 'root',
 })
 export class AuthService {
   private currentUser: any;
+  private TOKEN_KEY = 'authToken';
+
+  // Almacena el token
+  setToken(token: string): void {
+    localStorage.setItem(this.TOKEN_KEY, token);
+  }
+
+  // Obtiene el token
+  getToken(): string | null {
+    return localStorage.getItem(this.TOKEN_KEY);
+  }
+
+  // Borra el token
+  removeToken(): void {
+    localStorage.removeItem(this.TOKEN_KEY);
+  }
 
   constructor(private toastController: ToastController) {
     const storedUser = localStorage.getItem('currentUser');

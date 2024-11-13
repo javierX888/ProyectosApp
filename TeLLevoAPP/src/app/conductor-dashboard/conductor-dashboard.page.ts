@@ -1,8 +1,10 @@
+// src/app/conductor-dashboard/conductor-dashboard.page.ts
+
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { AlertController, LoadingController } from '@ionic/angular';
 import { AuthService } from '../services/auth.service';
-import { ViajeService, Viaje } from '../services/viaje.service';
+import { ViajeService, Viaje, EstadisticasConductor } from '../services/viaje.service';
 
 @Component({
   selector: 'app-conductor-dashboard',
@@ -14,7 +16,7 @@ export class ConductorDashboardPage implements OnInit {
   viajesActivos: number = 0;
   totalPasajeros: number = 0;
   viajesProgramados: Viaje[] = [];
-  perfilVisible: boolean = false; // Renombrado para evitar duplicación
+  perfilVisible: boolean = false; 
   showAddVehicleForm: boolean = false;
   newVehicle: any = {
     modeloVehiculo: '',
@@ -25,7 +27,7 @@ export class ConductorDashboardPage implements OnInit {
 
   constructor(
     private router: Router,
-    public authService: AuthService, // Cambiado a public para acceso desde el template
+    public authService: AuthService, // Public para acceso desde el template
     private viajeService: ViajeService,
     private alertController: AlertController,
     private loadingController: LoadingController
@@ -49,20 +51,25 @@ export class ConductorDashboardPage implements OnInit {
   }
 
   cargarEstadisticas() {
-    this.viajeService.getEstadisticasConductor(this.authService.getUsername()).then(stats => {
-      this.viajesActivos = stats.viajesActivos;
-      this.totalPasajeros = stats.totalPasajeros;
-    }).catch(error => {
-      console.error('Error cargando estadísticas:', error);
-    });
+    this.viajeService.getEstadisticasConductor(this.authService.getUsername())
+      .then((stats: EstadisticasConductor) => {
+        this.viajesActivos = stats.viajesActivos;
+        this.totalPasajeros = stats.totalPasajeros;
+      })
+      .catch(error => {
+        console.error('Error cargando estadísticas:', error);
+      });
   }
 
   cargarViajesProgramados() {
-    this.viajeService.getViajesProgramados(this.authService.getUsername()).subscribe((viajes: Viaje[]) => {
-      this.viajesProgramados = viajes;
-    }, error => {
-      console.error('Error cargando viajes programados:', error);
-    });
+    this.viajeService.getViajesProgramados(this.authService.getUsername()).subscribe(
+      (viajes: Viaje[]) => {
+        this.viajesProgramados = viajes;
+      },
+      error => {
+        console.error('Error cargando viajes programados:', error);
+      }
+    );
   }
 
   programarViaje() {

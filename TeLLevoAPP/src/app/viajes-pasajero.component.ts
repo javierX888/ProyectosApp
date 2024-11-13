@@ -1,47 +1,43 @@
-import { Component, OnInit } from '@angular/core';
-import { ViajeService, Viaje } from './services/viaje.service';
-import { AuthService } from './services/auth.service';
+import { Component, Input } from '@angular/core';
+import { ViajeService } from '../services/viaje.service';
+import { ToastController } from '@ionic/angular';
 
 @Component({
   selector: 'app-viajes-pasajero',
-  template: `
-    <ion-list>
-      <ion-item *ngFor="let viaje of viajes">
-        <ion-label>
-          <h2>{{ viaje.origen }} - {{ viaje.destino }}</h2>
-          <p>Fecha: {{ viaje.fecha | date:'dd/MM/yyyy' }} </p>
-          <p>Conductor: {{ viaje.conductorNombre }}</p>
-          <p>Estado: {{ viaje.estado }}</p>
-        </ion-label>
-        <ion-button slot="end" (click)="cancelarReserva(viaje.id)" *ngIf="viaje.estado === 'reservado'">
-          Cancelar
-        </ion-button>
-      </ion-item>
-    </ion-list>
-  `
+  templateUrl: './viajes-pasajero.component.html',
+  styleUrls: ['./viajes-pasajero.component.scss'],
 })
-export class ViajesPasajeroComponent implements OnInit {
-  viajes: Viaje[] = [];
+export class ViajesPasajeroComponent {
+  @Input() viajeId: number;
 
-  constructor(private viajeService: ViajeService, private authService: AuthService) {}
+  constructor(
+    private viajeService: ViajeService,
+    private toastController: ToastController
+  ) { }
 
-  ngOnInit() {
-    this.cargarViajes();
-  }
-
-  cargarViajes() {
-    this.viajeService.getViajesReservados(this.authService.getUsername()).subscribe(
-      viajes => this.viajes = viajes
-    );
-  }
-
-  cancelarReserva(viajeId: number) {
-    this.viajeService.cancelarViaje(viajeId).subscribe(
-      success => {
+  cancelarViaje() {
+    this.viajeService.cancelarViaje(this.viajeId).subscribe(
+      (success: boolean) => {
         if (success) {
-          this.cargarViajes();
+          this.presentToast('Viaje cancelado exitosamente.', 'success');
+        } else {
+          this.presentToast('Error al cancelar el viaje.', 'danger');
         }
+      },
+      (error) => {
+        console.error('Error al cancelar viaje:', error);
+        this.presentToast('Error al cancelar el viaje.', 'danger');
       }
     );
+  }
+
+  // Método para mostrar un toast
+  async presentToast(message: string, color: string) {
+    const toast = await this.toastController.create({
+      message,
+      duration: 2000,
+      color
+    });
+    toast.present();
   }
 }

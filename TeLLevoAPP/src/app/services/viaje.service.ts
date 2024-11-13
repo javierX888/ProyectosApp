@@ -1,21 +1,30 @@
 import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
+import { Observable, of, throwError } from 'rxjs';
 
 export interface Viaje {
   id: number;
   origen: string;
   destino: string;
   fecha: string;
-  hora?: string; // Si usas hora
+  hora?: string; // Opcional si usas hora
   asientosDisponibles: number;
   precio: number;
   conductorNombre: string;
   patente?: string;
   vehiculo: any;
-  conductor: string;
   estado: 'disponible' | 'reservado' | 'aceptado' | 'cancelado' | 'completado';
   pasajeros: string[];
   pasajeroNombre?: string;
+}
+
+export interface EstadisticasConductor {
+  viajesActivos: number;
+  totalPasajeros: number;
+}
+
+export interface EstadisticasPasajero {
+  viajesReservados: number;
+  viajesCompletados: number;
 }
 
 @Injectable({
@@ -25,74 +34,90 @@ export class ViajeService {
   private viajes: Viaje[] = [];
 
   constructor() {
-    // Cargar viajes desde localStorage si es necesario
+    // Cargar viajes desde localStorage si existen
     const storedViajes = localStorage.getItem('viajes');
     if (storedViajes) {
       this.viajes = JSON.parse(storedViajes);
     }
   }
 
+  // Método para guardar los viajes en localStorage
+  private saveViajes() {
+    localStorage.setItem('viajes', JSON.stringify(this.viajes));
+  }
+
+  // Programar un nuevo viaje
   programarViaje(viaje: Viaje): Observable<Viaje> {
-    const nuevoViaje: Viaje = { 
-      ...viaje, 
-      id: this.viajes.length + 1, 
+    const nuevoViaje: Viaje = {
+      ...viaje,
+      id: this.viajes.length + 1,
       estado: 'disponible',
-      pasajeros: []
+      pasajeros: [],
     };
     this.viajes.push(nuevoViaje);
     this.saveViajes();
     return of(nuevoViaje);
   }
 
-  getViajesDisponibles(): Observable<Viaje[]> {
-    return of(this.viajes.filter(v => v.estado === 'disponible'));
-  }
-
+  // Obtener todos los viajes programados por un conductor
   getViajesProgramados(conductorNombre: string): Observable<Viaje[]> {
-    const viajesConductor = this.viajes.filter(v => v.conductorNombre === conductorNombre);
+    const viajesConductor = this.viajes.filter(
+      (v) => v.conductorNombre === conductorNombre
+    );
     return of(viajesConductor);
   }
 
-  getViajesReservados(pasajeroNombre: string): Observable<Viaje[]> {
-    return of(this.viajes.filter(v => v.pasajeroNombre === pasajeroNombre && v.estado === 'reservado'));
+  // Obtener viajes disponibles por conductor
+  getViajesDisponibles(conductorNombre: string): Observable<Viaje[]> {
+    const disponibles = this.viajes.filter(
+      (v) =>
+        v.conductorNombre === conductorNombre && v.estado === 'disponible'
+    );
+    return of(disponibles);
   }
 
+  // Obtener viajes reservados por conductor
+  getViajesReservados(conductorNombre: string): Observable<Viaje[]> {
+    const reservados = this.viajes.filter(
+      (v) =>
+        v.conductorNombre === conductorNombre && v.estado === 'reservado'
+    );
+    return of(reservados);
+  }
+
+  // Obtener viajes completados por conductor
+  getViajesCompletados(conductorNombre: string): Observable<Viaje[]> {
+    const completados = this.viajes.filter(
+      (v) =>
+        v.conductorNombre === conductorNombre && v.estado === 'completado'
+    );
+    return of(completados);
+  }
+
+  // Obtener historial de viajes de un pasajero
   getHistorialViajes(username: string): Observable<Viaje[]> {
-    return of(this.viajes.filter(v => 
-      (v.conductorNombre === username || v.pasajeroNombre === username) && 
-      ['reservado', 'aceptado', 'cancelado', 'completado'].includes(v.estado)
-    ));
+    const historial = this.viajes.filter((v) =>
+      v.pasajeros.includes(username)
+    );
+    return of(historial);
   }
 
-  getEstadisticasConductor(conductorNombre: string): Promise<{ viajesActivos: number; totalPasajeros: number }> {
-    const viajesActivos = this.viajes.filter(v => v.conductorNombre === conductorNombre && v.estado === 'disponible').length;
-    const totalPasajeros = this.viajes
-      .filter(v => v.conductorNombre === conductorNombre)
-      .reduce((acc, v) => acc + v.pasajeros.length, 0);
-    return Promise.resolve({ viajesActivos, totalPasajeros });
-  }  
-
-  getEstadisticasPasajero(pasajeroNombre: string): Promise<{ viajesReservados: number; viajesCompletados: number }> {
-    const viajesReservados = this.viajes.filter(v => v.pasajeroNombre === pasajeroNombre && v.estado === 'reservado').length;
-    const viajesCompletados = this.viajes.filter(v => v.pasajeroNombre === pasajeroNombre && v.estado === 'completado').length;
-    return Promise.resolve({ viajesReservados, viajesCompletados });
-  }
-
-  reservarViaje(viajeId: number, pasajeroNombre: string): Observable<boolean> {
-    const viaje = this.viajes.find(v => v.id === viajeId);
-    if (viaje && viaje.asientosDisponibles > 0) {
-      viaje.asientosDisponibles--;
-      viaje.pasajeroNombre = pasajeroNombre;
+  // Reservar un viaje
+  reservarViaje(viajeId: number, username: string): Observable<boolean> {
+    const viaje = this.viajes.find((v) => v.id === viajeId);
+    if (viaje && viaje.estado === 'disponible' && viaje.asientosDisponibles > 0) {
       viaje.estado = 'reservado';
-      viaje.pasajeros.push(pasajeroNombre);
+      viaje.pasajeros.push(username);
+      viaje.asientosDisponibles -= 1;
       this.saveViajes();
       return of(true);
     }
     return of(false);
   }
 
+  // Aceptar un viaje reservado
   aceptarViaje(viajeId: number): Observable<boolean> {
-    const viaje = this.viajes.find(v => v.id === viajeId);
+    const viaje = this.viajes.find((v) => v.id === viajeId);
     if (viaje && viaje.estado === 'reservado') {
       viaje.estado = 'aceptado';
       this.saveViajes();
@@ -101,21 +126,51 @@ export class ViajeService {
     return of(false);
   }
 
+  // Cancelar un viaje reservado
   cancelarViaje(viajeId: number): Observable<boolean> {
-    const viaje = this.viajes.find(v => v.id === viajeId);
-    if (viaje && (viaje.estado === 'reservado' || viaje.estado === 'aceptado')) {
-      viaje.estado = 'cancelado';
-      const pasajeroNombre = viaje.pasajeroNombre; // Guarda el nombre antes de eliminarlo
-      viaje.pasajeroNombre = undefined;
-      viaje.asientosDisponibles++;
-      viaje.pasajeros = viaje.pasajeros.filter(nombre => nombre !== pasajeroNombre);
-      this.saveViajes();
-      return of(true);
+    const viajeIndex = this.viajes.findIndex((v) => v.id === viajeId);
+    if (viajeIndex !== -1) {
+      const viaje = this.viajes[viajeIndex];
+      if (viaje.estado === 'reservado' || viaje.estado === 'aceptado') {
+        viaje.estado = 'cancelado';
+        viaje.asientosDisponibles += viaje.pasajeros.length;
+        viaje.pasajeros = [];
+        this.saveViajes();
+        return of(true);
+      }
     }
     return of(false);
   }
 
-  private saveViajes() {
-    localStorage.setItem('viajes', JSON.stringify(this.viajes));
+  // Obtener estadísticas de un conductor
+  getEstadisticasConductor(username: string): Promise<EstadisticasConductor> {
+    return new Promise((resolve, reject) => {
+      const viajesActivos = this.viajes.filter(
+        (v) => v.conductorNombre === username && v.estado === 'aceptado'
+      ).length;
+
+      const totalPasajeros = this.viajes
+        .filter((v) => v.conductorNombre === username)
+        .reduce((acc, v) => acc + v.pasajeros.length, 0);
+
+      resolve({ viajesActivos, totalPasajeros });
+    });
+  }
+
+  // Obtener estadísticas de un pasajero
+  getEstadisticasPasajero(username: string): Promise<EstadisticasPasajero> {
+    return new Promise((resolve, reject) => {
+      const viajesReservados = this.viajes.filter(
+        (v) =>
+          v.pasajeros.includes(username) && v.estado === 'reservado'
+      ).length;
+
+      const viajesCompletados = this.viajes.filter(
+        (v) =>
+          v.pasajeros.includes(username) && v.estado === 'completado'
+      ).length;
+
+      resolve({ viajesReservados, viajesCompletados });
+    });
   }
 }

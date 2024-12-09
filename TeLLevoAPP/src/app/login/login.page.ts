@@ -1,10 +1,19 @@
-// src/app/login/login.page.ts
-
 import { Component } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { ApiService } from '../services/api.service'; // Cambia AuthService a ApiService
+import { ApiService } from '../services/api.service';
 import { Router } from '@angular/router';
-import { ToastController } from '@ionic/angular';
+import { ToastController, LoadingController } from '@ionic/angular';
+import { AuthService } from '../services/auth.service';
+
+// interfaz LoginResponse
+interface LoginResponse {
+  token: string;
+  user: {
+    id: string;
+    email: string;
+    tipo: 'conductor' | 'pasajero';
+  };
+}
 
 @Component({
   selector: 'app-login',
@@ -17,9 +26,11 @@ export class LoginPage {
 
   constructor(
     private fb: FormBuilder,
-    private apiService: ApiService, // Usa ApiService en lugar de AuthService
+    private apiService: ApiService,
+    private authService: AuthService, // Añadido
     private router: Router,
-    private toastController: ToastController
+    private toastController: ToastController,
+    private loadingController: LoadingController // Añadido
   ) {
     this.loginForm = this.fb.group({
       username: ['', [Validators.required, Validators.email]],
@@ -27,43 +38,7 @@ export class LoginPage {
     });
   }
 
-  async onLogin() {
-    if (this.loginForm.invalid) {
-      await this.showToast('Por favor, complete todos los campos correctamente');
-      return;
-    }
-
-    const { username, password } = this.loginForm.value;
-    try {
-      // Llama al método de login en ApiService y obtiene el token
-      const response = await this.apiService.login(username, password).toPromise();
-      const token = response.token;
-
-      // Guarda el token en el almacenamiento local
-      await this.apiService.saveToken(token);
-
-      // Opcional: Navega según el tipo de usuario, si es necesario
-      const userType = this.decodeToken(token).tipo; // Decodifica el token para obtener el tipo de usuario
-      if (userType === 'conductor') {
-        this.router.navigate(['/conductor-dashboard']);
-      } else if (userType === 'pasajero') {
-        this.router.navigate(['/pasajero-dashboard']);
-      } else {
-        await this.showToast('Tipo de usuario desconocido', 'danger');
-        this.router.navigate(['/home']);
-      }
-    } catch (error) {
-      console.error('Error al iniciar sesión:', error);
-      await this.showToast('Error al iniciar sesión');
-    }
-  }
-
-  // Decodifica el token para obtener información sobre el usuario
-  private decodeToken(token: string): any {
-    const payload = token.split('.')[1];
-    return JSON.parse(atob(payload));
-  }
-
+  // Métodos 
   toggleShowPassword() {
     this.showPassword = !this.showPassword;
   }
@@ -84,5 +59,47 @@ export class LoginPage {
       position: 'top',
     });
     await toast.present();
+  }
+
+  async onLogin() {
+    if (this.loginForm.invalid) {
+      await this.showToast('Por favor, complete todos los campos correctamente');
+      return;
+    }
+  
+    const loading = await this.loadingController.create({
+      message: 'Iniciando sesión...'
+    });
+    await loading.present();
+  
+    try {
+      const { username, password } = this.loginForm.value;
+      console.log('Login Page - Starting login process');
+      
+      const success = await this.authService.login(username, password);
+      await loading.dismiss();
+  
+      if (success) {
+        console.log('Login Page - Login successful');
+        const userType = this.authService.getUserType();
+        console.log('Login Page - User type:', userType);
+        
+        switch(userType) {
+          case 'conductor':
+            this.router.navigate(['/conductor-dashboard']);
+            break;
+          case 'pasajero':
+            this.router.navigate(['/pasajero-dashboard']);
+            break;
+          default:
+            console.error('Login Page - Unexpected user type:', userType);
+            await this.showToast('Tipo de usuario no válido', 'danger');
+        }
+      }
+    } catch (error: any) {
+      console.error('Login Page - Error:', error);
+      await loading.dismiss();
+      await this.showToast(error.message || 'Error en el inicio de sesión', 'danger');
+    }
   }
 }

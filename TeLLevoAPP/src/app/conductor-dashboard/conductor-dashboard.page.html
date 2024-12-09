@@ -1,85 +1,39 @@
-<ion-header>
-  <ion-toolbar color="primary">
-    <ion-title>Conductor</ion-title>
-    <ion-buttons slot="end">
-      <ion-button (click)="cerrarSesion()">
-        <ion-icon name="log-out-outline" slot="icon-only"></ion-icon>
-      </ion-button>
-    </ion-buttons>
-  </ion-toolbar>
-</ion-header>
-
 <ion-content>
-  <!-- Header de bienvenida -->
-  <div class="welcome-header ion-padding">
+  <!-- Encabezado de bienvenida -->
+  <div class="welcome-header">
+    <!-- Botón cerrar sesión -->
+    <ion-button class="logout-button" color="danger" size="small" (click)="cerrarSesion()">
+      <ion-icon name="log-out-outline"></ion-icon>
+    </ion-button>
+    
     <div class="user-info">
       <ion-avatar>
-        <ion-icon name="car-outline" class="avatar-icon"></ion-icon>
+        <div class="avatar-icon" *ngIf="!profileImage">
+          <ion-icon name="person"></ion-icon>
+        </div>
+        <img [src]="profileImage" *ngIf="profileImage">
       </ion-avatar>
       <div class="user-details">
-        <h1>¡Bienvenido, {{ nombreUsuario }}!</h1>
+        <h1 *ngIf="nombreUsuario">¡Bienvenido, {{ nombreUsuario }}!</h1>
+        <h1 *ngIf="!nombreUsuario">¡Bienvenido!</h1>
         <p>Conductor TeLlevoAPP</p>
       </div>
     </div>
   </div>
 
-  <!-- Sección de Perfil -->
-  <ion-card *ngIf="perfilVisible" class="ion-padding">
-    <ion-card-header>
-      <ion-card-title>Mi Perfil</ion-card-title>
-    </ion-card-header>
-    <ion-card-content>
-      <p><strong>Nombre:</strong> {{ nombreUsuario }}</p>
-      <p><strong>Email:</strong> {{ authService.getUsername() }}</p>
-      <h3>Vehículos</h3>
-      <ion-list>
-        <ion-item *ngFor="let vehiculo of vehicles">
-          <ion-label>
-            <h2>{{ vehiculo.modeloVehiculo }}</h2>
-            <p><strong>Patente:</strong> {{ vehiculo.patente }}</p>
-            <p><strong>Licencia:</strong> {{ vehiculo.licencia }}</p>
-          </ion-label>
-        </ion-item>
-      </ion-list>
-      <ion-button (click)="toggleAddVehicleForm()" expand="block" fill="outline">
-        <ion-icon name="add-circle-outline" slot="start"></ion-icon>
-        {{ showAddVehicleForm ? 'Cancelar' : 'Agregar Nuevo Vehículo' }}
-      </ion-button>
-
-      <!-- Formulario para agregar nuevo vehículo -->
-      <div *ngIf="showAddVehicleForm">
-        <ion-item>
-          <ion-label position="floating">Modelo del Vehículo</ion-label>
-          <ion-input [(ngModel)]="newVehicle.modeloVehiculo" name="modeloVehiculo"></ion-input>
-        </ion-item>
-        <ion-item>
-          <ion-label position="floating">Patente</ion-label>
-          <ion-input [(ngModel)]="newVehicle.patente" name="patente"></ion-input>
-        </ion-item>
-        <ion-item>
-          <ion-label position="floating">Licencia</ion-label>
-          <ion-input [(ngModel)]="newVehicle.licencia" name="licencia"></ion-input>
-        </ion-item>
-        <ion-button (click)="addVehicle()" expand="block">
-          Guardar Vehículo
-        </ion-button>
-      </div>
-    </ion-card-content>
-  </ion-card>
-
-  <!-- Tarjetas de Estado -->
-  <ion-grid class="stats-grid ion-padding">
+  <!-- Estadísticas -->
+  <ion-grid class="stats-grid">
     <ion-row>
       <ion-col size="6">
         <div class="stat-card">
-          <ion-icon name="car-sport-outline" color="primary"></ion-icon>
+          <ion-icon name="car-sport"></ion-icon>
           <h3>{{ viajesActivos }}</h3>
           <p>Viajes Activos</p>
         </div>
       </ion-col>
       <ion-col size="6">
         <div class="stat-card">
-          <ion-icon name="people-outline" color="success"></ion-icon>
+          <ion-icon name="people"></ion-icon>
           <h3>{{ totalPasajeros }}</h3>
           <p>Pasajeros Totales</p>
         </div>
@@ -87,7 +41,74 @@
     </ion-row>
   </ion-grid>
 
-  <!-- Acciones Principales -->
+  <!-- Sección de Perfil -->
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>Mi Perfil</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-list>
+        <ion-item>
+          <ion-label>
+            <h2>Nombre</h2>
+            <p>{{ nombreUsuario }}</p>
+          </ion-label>
+        </ion-item>
+        <ion-item>
+          <ion-label>
+            <h2>Email</h2>
+            <p>{{ email }}</p>
+          </ion-label>
+        </ion-item>
+      </ion-list>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- Sección de Vehículos -->
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>Vehículos</ion-card-title>
+      <ion-button fill="clear" (click)="toggleAddVehicleForm()">
+        {{ showAddVehicleForm ? 'Cancelar' : 'Agregar Nuevo Vehículo' }}
+      </ion-button>
+    </ion-card-header>
+
+    <ion-card-content>
+      <!-- Formulario para agregar vehículo -->
+      <div *ngIf="showAddVehicleForm" class="form-container">
+        <ion-list>
+          <ion-item>
+            <ion-label position="floating">Modelo del Vehículo</ion-label>
+            <ion-input [(ngModel)]="newVehicle.modeloVehiculo" required></ion-input>
+          </ion-item>
+          <ion-item>
+            <ion-label position="floating">Patente</ion-label>
+            <ion-input [(ngModel)]="newVehicle.patente" required></ion-input>
+          </ion-item>
+          <ion-item>
+            <ion-label position="floating">Licencia</ion-label>
+            <ion-input [(ngModel)]="newVehicle.licencia" required></ion-input>
+          </ion-item>
+        </ion-list>
+        <ion-button expand="block" (click)="addVehicle()" class="ion-margin-top">
+          Guardar Vehículo
+        </ion-button>
+      </div>
+
+      <!-- Lista de vehículos -->
+      <ion-list *ngIf="vehicles.length > 0">
+        <ion-item *ngFor="let vehiculo of vehicles">
+          <ion-label>
+            <h2>{{ vehiculo.modeloVehiculo }}</h2>
+            <p>Patente: {{ vehiculo.patente }}</p>
+            <p>Licencia: {{ vehiculo.licencia }}</p>
+          </ion-label>
+        </ion-item>
+      </ion-list>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- Botón de acción principal -->
   <div class="main-actions ion-padding">
     <ion-button expand="block" class="action-button" (click)="programarViaje()">
       <ion-icon name="add-circle-outline" slot="start"></ion-icon>
@@ -95,57 +116,49 @@
     </ion-button>
   </div>
 
-  <!-- Lista de Viajes Programados -->
-  <div class="viajes-section ion-padding">
+  <!-- Sección de viajes programados -->
+  <div class="viajes-section">
     <div class="section-header">
       <h2>Viajes Programados</h2>
-      <ion-button fill="clear" (click)="verViajesProgramados()">
+      <ion-button fill="clear" size="small" (click)="verTodosLosViajes()">
         Ver todos
-        <ion-icon name="arrow-forward-outline" slot="end"></ion-icon>
       </ion-button>
     </div>
-
-    <ion-list>
+    
+    <ion-list *ngIf="viajesProgramados && viajesProgramados.length > 0">
       <ion-item *ngFor="let viaje of viajesProgramados">
         <ion-label>
           <h2>{{ viaje.destino }}</h2>
           <p>{{ viaje.fecha | date:'short' }}</p>
-          <p>Vehículo: {{ viaje.vehiculo.modeloVehiculo }} - {{ viaje.vehiculo.patente }}</p>
+          <p>Vehículo: {{ viaje.vehiculo?.modeloVehiculo }} - {{ viaje.vehiculo?.patente }}</p>
         </ion-label>
       </ion-item>
     </ion-list>
+    <!-- Mensaje cuando no hay viajes -->
+    <div *ngIf="!viajesProgramados || viajesProgramados.length === 0" class="no-viajes">
+      <p>No hay viajes programados</p>
+    </div>
   </div>
 </ion-content>
 
-<!-- Footer con navegación -->
+<!-- Barra de navegación inferior -->
 <ion-footer>
-  <ion-toolbar>
-    <ion-tabs>
-      <ion-tab-bar slot="bottom">
-        <!-- Botón Mi Perfil -->
-        <ion-tab-button (click)="mostrarPerfil()">
-          <ion-icon name="person-circle-outline"></ion-icon>
-          <ion-label>Mi Perfil</ion-label>
-        </ion-tab-button>
-
-        <!-- Botón Nuevo Viaje -->
-        <ion-tab-button (click)="programarViaje()">
-          <ion-icon name="add-circle-outline"></ion-icon>
-          <ion-label>Nuevo Viaje</ion-label>
-        </ion-tab-button>
-
-        <!-- Botón Mis Viajes -->
-        <ion-tab-button (click)="verViajesProgramados()">
-          <ion-icon name="list-outline"></ion-icon>
-          <ion-label>Mis Viajes</ion-label>
-        </ion-tab-button>
-
-        <!-- Botón Historial -->
-        <ion-tab-button (click)="verHistorial()">
-          <ion-icon name="time-outline"></ion-icon>
-          <ion-label>Historial</ion-label>
-        </ion-tab-button>
-      </ion-tab-bar>
-    </ion-tabs>
-  </ion-toolbar>
+  <ion-tab-bar>
+    <ion-tab-button (click)="mostrarPerfil()">
+      <ion-icon name="person"></ion-icon>
+      <ion-label>Mi Perfil</ion-label>
+    </ion-tab-button>
+    <ion-tab-button (click)="programarViaje()">
+      <ion-icon name="add-circle"></ion-icon>
+      <ion-label>Nuevo Viaje</ion-label>
+    </ion-tab-button>
+    <ion-tab-button (click)="verViajesProgramados()">
+      <ion-icon name="car"></ion-icon>
+      <ion-label>Mis Viajes</ion-label>
+    </ion-tab-button>
+    <ion-tab-button (click)="verHistorial()">
+      <ion-icon name="time"></ion-icon>
+      <ion-label>Historial</ion-label>
+    </ion-tab-button>
+  </ion-tab-bar>
 </ion-footer>

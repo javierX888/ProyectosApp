@@ -11,11 +11,15 @@
   <!-- Filtros de búsqueda -->
   <div class="search-filters ion-padding">
     <ion-card>
+      <ion-card-header>
+        <ion-card-title>Filtros de búsqueda</ion-card-title>
+      </ion-card-header>
       <ion-card-content>
         <!-- Selector de Sede -->
         <ion-item>
           <ion-label position="stacked">Sede DuocUC</ion-label>
-          <ion-select [(ngModel)]="filtros.sede" (ionChange)="buscarViajes()">
+          <ion-select [(ngModel)]="filtros.sede" (ionChange)="buscarViajes()" interface="popover">
+            <ion-select-option value="">Todas las sedes</ion-select-option>
             <ion-select-option *ngFor="let sede of sedes" [value]="sede.sede">
               {{sede.sede}} ({{sede.comuna}})
             </ion-select-option>
@@ -26,18 +30,13 @@
         <ion-item>
           <ion-label position="stacked">Fecha</ion-label>
           <ion-datetime
-            display-format="DD/MM/YYYY"
-            picker-format="DD/MM/YYYY"
+            presentation="date"
             [(ngModel)]="filtros.fecha"
             [min]="fechaMinima"
             [max]="fechaMaxima"
             (ionChange)="buscarViajes()"
-            cancelText="Cancelar"
-            doneText="Aceptar"
-            monthNames="Enero,Febrero,Marzo,Abril,Mayo,Junio,Julio,Agosto,Septiembre,Octubre,Noviembre,Diciembre"
-            monthShortNames="Ene,Feb,Mar,Abr,May,Jun,Jul,Ago,Sep,Oct,Nov,Dic"
-            dayNames="Domingo,Lunes,Martes,Miércoles,Jueves,Viernes,Sábado"
-            dayShortNames="Dom,Lun,Mar,Mié,Jue,Vie,Sáb">
+            locale="es-ES"
+            firstDayOfWeek="1">
           </ion-datetime>
         </ion-item>
       </ion-card-content>
@@ -65,7 +64,7 @@
                   <h2>{{viaje.origen}} → {{viaje.destino}}</h2>
                   <p class="fecha">
                     <ion-icon name="calendar-outline"></ion-icon>
-                    {{viaje.fecha | date:'dd/MM/yyyy'}}
+                    {{viaje.fecha | date:'dd/MM/yyyy'}} {{viaje.hora}}
                   </p>
                 </div>
                 <div class="precio">
@@ -74,13 +73,16 @@
                 </div>
               </div>
 
+              <!-- Información del conductor -->
               <div class="conductor-info">
-                <ion-avatar slot="start">
+                <ion-avatar>
                   <ion-icon name="person-circle-outline"></ion-icon>
                 </ion-avatar>
                 <div class="details">
                   <h3>{{viaje.conductorNombre}}</h3>
-                  <p class="patente" *ngIf="viaje.patente">{{viaje.patente}}</p>
+                  <p class="patente" *ngIf="viaje.patente">
+                    {{viaje.patente}}
+                  </p>
                 </div>
                 <div class="asientos">
                   <ion-icon name="people-outline"></ion-icon>

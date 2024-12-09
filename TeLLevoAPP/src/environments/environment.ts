@@ -8,7 +8,7 @@
 // src/environments/environment.ts
 export const environment = {
   production: false,
-  apiUrl: 'https://tellevoapp-api-production.up.railway.app', // URL pública de Railway
+  apiUrl: 'http://localhost:3000/api', // URL pública de Railway
 };
 
 

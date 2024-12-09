@@ -32,9 +32,9 @@ export class ViajesProgramadosPage implements OnInit {
       (viajes: Viaje[]) => {
         this.disponiblesViajes = viajes;
       },
-      (error) => {
+      (error: any) => {
         console.error('Error al cargar viajes disponibles:', error);
-      }
+      }      
     );
 
     // Obtener viajes reservados
@@ -42,9 +42,9 @@ export class ViajesProgramadosPage implements OnInit {
       (viajes: Viaje[]) => {
         this.reservadosViajes = viajes;
       },
-      (error) => {
-        console.error('Error al cargar viajes reservados:', error);
-      }
+      (error: any) => {
+        console.error('Error al cargar viajes disponibles:', error);
+      }      
     );
 
     // Obtener viajes completados (opcional)
@@ -52,7 +52,7 @@ export class ViajesProgramadosPage implements OnInit {
       (viajes: Viaje[]) => {
         this.completadosViajes = viajes;
       },
-      (error) => {
+      (error: any) => {
         console.error('Error al cargar viajes completados:', error);
       }
     );

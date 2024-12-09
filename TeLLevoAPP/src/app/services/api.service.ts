@@ -1,119 +1,201 @@
-// src/app/services/api.service.ts
-
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
 import { Storage } from '@ionic/storage-angular';
 import { environment } from '../../environments/environment';
-import { Observable } from 'rxjs';
+import { Observable, throwError, from } from 'rxjs';
+import { catchError, tap, switchMap, map } from 'rxjs/operators';
+
+export interface VehicleData {
+  modeloVehiculo: string;
+  patente: string;
+  licencia: string;
+  capacidad?: number;
+}
+
+export interface ViajeData {
+  origen: string;
+  destino: string;
+  fecha: string;
+  hora: string;
+  asientosDisponibles: number;
+  precio: number;
+  vehiculoId?: string;
+  estado?: 'disponible' | 'reservado' | 'aceptado' | 'cancelado' | 'completado';
+}
+
+export interface UserData {
+  nombre: string;
+  email: string;
+  contraseña: string;
+  tipo: 'conductor' | 'pasajero';
+}
+
+export interface LoginResponse {
+  token: string;
+  user: {
+    id: string;
+    email: string;
+    tipo: 'conductor' | 'pasajero';
+    nombre: string;
+  };
+}
+
+export interface SearchFilters {
+  origen?: string;
+  destino?: string;
+  fecha?: string;
+  asientosMinimos?: number;
+  precioMaximo?: number;
+}
 
 @Injectable({
-  providedIn: 'root',
+  providedIn: 'root'
 })
 export class ApiService {
-  private apiUrl = environment.apiUrl;
+  private readonly apiUrl = environment.apiUrl;
+  private readonly TOKEN_KEY = 'authToken';
 
-  constructor(private http: HttpClient, private storage: Storage) {
-    this.storage.create(); // Inicializa el almacenamiento de Ionic
+  constructor(
+    private http: HttpClient,
+    private storage: Storage
+  ) {
+    this.initStorage();
   }
 
-  // Login para obtener el token
-  login(email: string, password: string): Observable<any> {
-    return this.http.post(`${this.apiUrl}/users/login`, {
+  private async initStorage() {
+    await this.storage.create();
+  }
+
+  private handleError(error: HttpErrorResponse) {
+    console.error('API Error:', error);
+    const message = error.error?.message || 'Error en el servidor';
+    return throwError(() => new Error(message));
+  }
+
+  login(email: string, password: string): Observable<LoginResponse> {
+    return this.http.post<LoginResponse>(`${this.apiUrl}/users/login`, {
       email,
-      contraseña: password,
-    });
+      contraseña: password
+    }).pipe(
+      tap(response => this.saveToken(response.token)),
+      catchError(this.handleError)
+    );
   }
 
-  // Guardar token en almacenamiento local
-  async saveToken(token: string): Promise<void> {
-    await this.storage.set('authToken', token);
+  register(userData: UserData): Observable<LoginResponse> {
+    return this.http.post<LoginResponse>(`${this.apiUrl}/users/register`, userData).pipe(
+      tap(response => this.saveToken(response.token)),
+      catchError(this.handleError)
+    );
   }
 
-  // Obtener token del almacenamiento local
-  async getToken(): Promise<string | null> {
-    return await this.storage.get('authToken');
+  resetPassword(email: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}/users/reset-password`, { email }).pipe(
+      catchError(this.handleError)
+    );
   }
 
-  // Configurar encabezados de autorización
-  private async getAuthHeaders(): Promise<HttpHeaders> {
-    const token = await this.getToken();
-    return new HttpHeaders({
-      Authorization: `Bearer ${token}`,
-    });
+  saveToken(token: string): Observable<void> {
+    return from(this.storage.set(this.TOKEN_KEY, token));
   }
 
-  // RUTAS PROTEGIDAS PARA VEHÍCULOS
-
-  // Agregar un vehículo
-  async addVehicle(vehicleData: any): Promise<Observable<any>> {
-    const headers = await this.getAuthHeaders();
-    return this.http.post(`${this.apiUrl}/vehicles`, vehicleData, { headers });
+  getToken(): Observable<string | null> {
+    return from(this.storage.get(this.TOKEN_KEY));
   }
 
-  // Obtener todos los vehículos del conductor
-  async getVehicles(): Promise<Observable<any>> {
-    const headers = await this.getAuthHeaders();
-    return this.http.get(`${this.apiUrl}/vehicles`, { headers });
+  clearToken(): Observable<void> {
+    return from(this.storage.remove(this.TOKEN_KEY));
   }
 
-  // Eliminar un vehículo
-  async deleteVehicle(vehicleId: string): Promise<Observable<any>> {
-    const headers = await this.getAuthHeaders();
-    return this.http.delete(`${this.apiUrl}/vehicles/${vehicleId}`, { headers });
+  private getAuthHeaders(): Observable<HttpHeaders> {
+    return this.getToken().pipe(
+      map(token => new HttpHeaders({
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }))
+    );
   }
 
-  // RUTAS PROTEGIDAS PARA VIAJES
-
-  // Crear un viaje
-  async createViaje(viajeData: any): Promise<Observable<any>> {
-    const headers = await this.getAuthHeaders();
-    return this.http.post(`${this.apiUrl}/viajes`, viajeData, { headers });
+  logout(): Observable<void> {
+    return this.clearToken();
   }
 
-  // Obtener viajes disponibles
-  getAvailableViajes(): Observable<any> {
-    return this.http.get(`${this.apiUrl}/viajes/disponibles`);
+  getProfile(): Observable<any> {
+    return this.getAuthHeaders().pipe(
+      switchMap(headers => this.http.get(`${this.apiUrl}/users/profile`, { headers })),
+      catchError(this.handleError)
+    );
   }
 
-  // Reservar un viaje
-  async reservarViaje(viajeId: string): Promise<Observable<any>> {
-    const headers = await this.getAuthHeaders();
-    return this.http.post(`${this.apiUrl}/viajes/${viajeId}/reservar`, {}, { headers });
+  updateProfile(userData: Partial<UserData>): Observable<any> {
+    return this.getAuthHeaders().pipe(
+      switchMap(headers => this.http.put(
+        `${this.apiUrl}/users/profile`,
+        userData,
+        { headers }
+      )),
+      catchError(this.handleError)
+    );
   }
 
-  // Aceptar una reserva
-  async aceptarReserva(viajeId: string): Promise<Observable<any>> {
-    const headers = await this.getAuthHeaders();
-    return this.http.post(`${this.apiUrl}/viajes/${viajeId}/aceptar`, {}, { headers });
+  getVehicles(): Observable<VehicleData[]> {
+    return this.getAuthHeaders().pipe(
+      switchMap(headers => this.http.get<VehicleData[]>(`${this.apiUrl}/vehicles`, { headers })),
+      catchError(this.handleError)
+    );
   }
 
-  // Cancelar una reserva
-  async cancelarReserva(viajeId: string): Promise<Observable<any>> {
-    const headers = await this.getAuthHeaders();
-    return this.http.post(`${this.apiUrl}/viajes/${viajeId}/cancelar`, {}, { headers });
+  addVehicle(vehicleData: VehicleData): Observable<VehicleData> {
+    return this.getAuthHeaders().pipe(
+      switchMap(headers => this.http.post<VehicleData>(
+        `${this.apiUrl}/vehicles`,
+        vehicleData,
+        { headers }
+      )),
+      catchError(this.handleError)
+    );
   }
 
-  // Completar un viaje
-  async completarViaje(viajeId: string): Promise<Observable<any>> {
-    const headers = await this.getAuthHeaders();
-    return this.http.post(`${this.apiUrl}/viajes/${viajeId}/completar`, {}, { headers });
+  // MODIFICACIÓN AQUÍ: Añadimos un parámetro 'origen' opcional
+  getAvailableViajes(origen?: string): Observable<ViajeData[]> {
+    return this.getAuthHeaders().pipe(
+      switchMap(headers => {
+        const url = origen
+          ? `${this.apiUrl}/viajes/disponibles?origen=${encodeURIComponent(origen)}`
+          : `${this.apiUrl}/viajes/disponibles`;
+        return this.http.get<ViajeData[]>(url, { headers });
+      }),
+      catchError(this.handleError)
+    );
   }
 
-  // Obtener historial de viajes para pasajeros
-  async getHistorialViajes(): Promise<Observable<any>> {
-    const headers = await this.getAuthHeaders();
-    return this.http.get(`${this.apiUrl}/viajes/historial`, { headers });
+  searchViajes(filters: SearchFilters): Observable<ViajeData[]> {
+    return this.getAuthHeaders().pipe(
+      switchMap(headers => this.http.get<ViajeData[]>(
+        `${this.apiUrl}/viajes/search`,
+        { headers, params: { ...filters } }
+      )),
+      catchError(this.handleError)
+    );
   }
 
-  // Obtener estadísticas para el conductor
-  async getEstadisticasConductor(): Promise<Observable<any>> {
-    const headers = await this.getAuthHeaders();
-    return this.http.get(`${this.apiUrl}/viajes/estadisticas/conductor`, { headers });
+  getViajesProgramados(conductorId: string): Observable<ViajeData[]> {
+    return this.getAuthHeaders().pipe(
+      switchMap(headers => this.http.get<ViajeData[]>(
+        `${this.apiUrl}/viajes/programados/${conductorId}`,
+        { headers }
+      )),
+      catchError(this.handleError)
+    );
   }
 
-  // Obtener estadísticas para el pasajero
-  async getEstadisticasPasajero(): Promise<Observable<any>> {
-    const headers = await this.getAuthHeaders();
-    return this.http.get(`${this.apiUrl}/viajes/estadisticas/pasajero`, { headers });
+  getEstadisticasConductor(conductorId: string): Observable<any> {
+    return this.getAuthHeaders().pipe(
+      switchMap(headers => this.http.get(
+        `${this.apiUrl}/viajes/estadisticas/conductor/${conductorId}`,
+        { headers }
+      )),
+      catchError(this.handleError)
+    );
   }
 }

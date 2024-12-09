@@ -1,41 +1,39 @@
-<ion-header>
-  <ion-toolbar color="primary">
-    <ion-title>Pasajero</ion-title>
-    <ion-buttons slot="end">
-      <ion-button (click)="cerrarSesion()">
-        <ion-icon name="log-out-outline" slot="icon-only"></ion-icon>
-      </ion-button>
-    </ion-buttons>
-  </ion-toolbar>
-</ion-header>
-
 <ion-content>
-  <!-- Header de bienvenida -->
-  <div class="welcome-header ion-padding">
+  <!-- Encabezado de bienvenida -->
+  <div class="welcome-header">
+    <!-- Botón cerrar sesión -->
+    <ion-button class="logout-button" color="danger" size="small" (click)="cerrarSesion()">
+      <ion-icon name="log-out-outline"></ion-icon>
+    </ion-button>
+    
     <div class="user-info">
       <ion-avatar>
-        <ion-icon name="person-outline" class="avatar-icon"></ion-icon>
+        <div class="avatar-icon" *ngIf="!profileImage">
+          <ion-icon name="person"></ion-icon>
+        </div>
+        <img [src]="profileImage" *ngIf="profileImage">
       </ion-avatar>
       <div class="user-details">
-        <h1>¡Bienvenido, {{ nombreUsuario }}!</h1>
+        <h1 *ngIf="nombreUsuario">¡Bienvenido, {{ nombreUsuario }}!</h1>
+        <h1 *ngIf="!nombreUsuario">¡Bienvenido!</h1>
         <p>Pasajero TeLlevoAPP</p>
       </div>
     </div>
   </div>
 
   <!-- Estadísticas -->
-  <ion-grid class="stats-grid ion-padding">
+  <ion-grid class="stats-grid">
     <ion-row>
       <ion-col size="6">
         <div class="stat-card">
-          <ion-icon name="car-sport-outline" color="primary"></ion-icon>
+          <ion-icon name="car-sport"></ion-icon>
           <h3>{{ viajesReservados }}</h3>
           <p>Viajes Reservados</p>
         </div>
       </ion-col>
       <ion-col size="6">
         <div class="stat-card">
-          <ion-icon name="checkmark-circle-outline" color="success"></ion-icon>
+          <ion-icon name="checkmark-circle"></ion-icon>
           <h3>{{ viajesCompletados }}</h3>
           <p>Viajes Completados</p>
         </div>
@@ -43,67 +41,80 @@
     </ion-row>
   </ion-grid>
 
-  <!-- Acciones Principales -->
+  <!-- Sección de Perfil -->
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>Mi Perfil</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-list>
+        <ion-item>
+          <ion-label>
+            <h2>Nombre</h2>
+            <p>{{ nombreUsuario }}</p>
+          </ion-label>
+        </ion-item>
+        <ion-item>
+          <ion-label>
+            <h2>Email</h2>
+            <p>{{ email }}</p>
+          </ion-label>
+        </ion-item>
+      </ion-list>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- Botón de acción principal -->
   <div class="main-actions ion-padding">
     <ion-button expand="block" class="action-button" (click)="buscarViaje()">
       <ion-icon name="search-outline" slot="start"></ion-icon>
       Buscar Viaje
     </ion-button>
-
-    <ion-button expand="block" class="action-button" fill="outline" (click)="verViajesReservados()">
-      <ion-icon name="list-outline" slot="start"></ion-icon>
-      Viajes Reservados
-    </ion-button>
   </div>
 
-  <!-- Próximos Viajes -->
-  <div class="viajes-section ion-padding">
+  <!-- Sección de viajes reservados -->
+  <div class="viajes-section">
     <div class="section-header">
-      <h2>Próximos Viajes</h2>
-      <ion-button fill="clear" (click)="verViajesReservados()">
+      <h2>Mis Viajes Reservados</h2>
+      <ion-button fill="clear" size="small" (click)="verViajesReservados()">
         Ver todos
-        <ion-icon name="arrow-forward-outline" slot="end"></ion-icon>
       </ion-button>
     </div>
-
-    <ion-list>
+    
+    <ion-list *ngIf="proximosViajes.length > 0">
       <ion-item *ngFor="let viaje of proximosViajes">
         <ion-label>
           <h2>{{ viaje.destino }}</h2>
           <p>{{ formatearFecha(viaje.fecha) }}</p>
-          <p>Vehículo: {{ viaje.vehiculo.modeloVehiculo }} - {{ viaje.vehiculo.patente }}</p>
+          <p>Conductor: {{ viaje.conductorNombre }}</p>
         </ion-label>
-        <ion-badge color="{{ getEstadoColor(viaje.estado) }}">{{ viaje.estado }}</ion-badge>
+        <ion-badge [color]="getEstadoColor(viaje.estado)">{{ viaje.estado }}</ion-badge>
       </ion-item>
     </ion-list>
+    <div *ngIf="proximosViajes.length === 0" class="no-viajes">
+      <p>No tienes viajes reservados</p>
+    </div>
   </div>
 </ion-content>
 
-<!-- Footer con navegación -->
+<!-- Barra de navegación inferior -->
 <ion-footer>
-  <ion-toolbar>
-    <ion-tabs>
-      <ion-tab-bar slot="bottom">
-        <ion-tab-button tab="dashboard" selected>
-          <ion-icon name="speedometer-outline"></ion-icon>
-          <ion-label>Dashboard</ion-label>
-        </ion-tab-button>
-
-        <ion-tab-button (click)="buscarViaje()">
-          <ion-icon name="search-outline"></ion-icon>
-          <ion-label>Buscar</ion-label>
-        </ion-tab-button>
-
-        <ion-tab-button (click)="verViajesReservados()">
-          <ion-icon name="list-outline"></ion-icon>
-          <ion-label>Mis Viajes</ion-label>
-        </ion-tab-button>
-
-        <ion-tab-button (click)="verHistorial()">
-          <ion-icon name="time-outline"></ion-icon>
-          <ion-label>Historial</ion-label>
-        </ion-tab-button>
-      </ion-tab-bar>
-    </ion-tabs>
-  </ion-toolbar>
+  <ion-tab-bar>
+    <ion-tab-button tab="dashboard">
+      <ion-icon name="home"></ion-icon>
+      <ion-label>Inicio</ion-label>
+    </ion-tab-button>
+    <ion-tab-button (click)="buscarViaje()">
+      <ion-icon name="search"></ion-icon>
+      <ion-label>Buscar</ion-label>
+    </ion-tab-button>
+    <ion-tab-button (click)="verViajesReservados()">
+      <ion-icon name="car"></ion-icon>
+      <ion-label>Mis Viajes</ion-label>
+    </ion-tab-button>
+    <ion-tab-button (click)="verHistorial()">
+      <ion-icon name="time"></ion-icon>
+      <ion-label>Historial</ion-label>
+    </ion-tab-button>
+  </ion-tab-bar>
 </ion-footer>

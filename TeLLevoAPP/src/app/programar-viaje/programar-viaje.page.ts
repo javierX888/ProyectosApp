@@ -21,10 +21,12 @@ export class ProgramarViajePage implements OnInit {
   comunaDestino: string = '';
   comunasDestino: string[] = [];
   fecha: string = '';
-  asientosDisponibles: number = 1; 
+  asientosDisponibles: number = 1;
   precio: number = 0;
   patente: string = '';
   fechaMinima: string = '';
+  
+  // Propiedades relacionadas con los vehículos
   vehicles: any[] = [];
   selectedVehicle: any;
   showAddVehicleForm: boolean = false;
@@ -33,7 +35,7 @@ export class ProgramarViajePage implements OnInit {
     patente: '',
     licencia: ''
   };
-  
+
   constructor(
     private router: Router,
     private toastController: ToastController,
@@ -42,89 +44,87 @@ export class ProgramarViajePage implements OnInit {
     private authService: AuthService
   ) { }
 
-  ngOnInit() {
+  async ngOnInit() {
+    // Inicialización de datos
     this.sedes = this.locationService.getSedes();
     this.fechaMinima = this.getLocalISOTime();
-    this.vehicles = this.authService.getVehicles();
+    this.vehicles = await this.authService.getVehicles();
     if (this.vehicles.length > 0) {
       this.selectedVehicle = this.vehicles[0];
     }
   }
 
-  // Método para obtener la fecha y hora en ISO local
+  // Obtener la fecha y hora local en formato ISO
   getLocalISOTime(): string {
-    const tzoffset = (new Date()).getTimezoneOffset() * 60000; // Offset en milisegundos
-    const localISOTime = (new Date(Date.now() - tzoffset)).toISOString().slice(0, -1);
-    return localISOTime;
+    const tzoffset = (new Date()).getTimezoneOffset() * 60000;
+    return (new Date(Date.now() - tzoffset)).toISOString().slice(0, -1);
   }
 
-  // Método que se ejecuta cuando se cambia la sede de origen
+  // Actualizar comunas cuando cambia la sede
   onSedeChange() {
     this.regionOrigen = this.locationService.getRegionBySede(this.sedeOrigen) || '';
     this.comunasDestino = this.locationService.getComunasByRegion(this.regionOrigen);
   }
-  
-  // Método para programar un nuevo viaje
-  programarViaje() {
+
+  // Método principal para programar un viaje
+  async programarViaje() {
     if (this.viajeForm.invalid) {
-      // Marcar todos los controles como tocados para mostrar mensajes de error
       Object.keys(this.viajeForm.controls).forEach((field) => {
         const control = this.viajeForm.controls[field];
         control.markAsTouched({ onlySelf: true });
       });
-      this.mostrarToast('Por favor, corrige los errores en el formulario', 'warning');
+      await this.mostrarToast('Por favor, corrige los errores en el formulario', 'warning');
       return;
     }
 
+    // Crear el objeto del nuevo viaje
     const nuevoViaje: Viaje = {
-      id: 0, // Se asignará en el servicio
+      id: 0,
       origen: this.sedeOrigen,
       destino: this.comunaDestino,
       fecha: this.fecha,
-      // hora: this.horaSeleccionada, // Descomenta si usas hora
       asientosDisponibles: this.asientosDisponibles,
       precio: this.precio,
       conductorNombre: this.authService.getUsername(),
       patente: this.selectedVehicle ? this.selectedVehicle.patente : this.patente,
-      vehiculo: this.selectedVehicle ? this.selectedVehicle : null,
-      conductor: this.authService.getUsername(),
+      vehiculo: this.selectedVehicle || null,
       estado: 'disponible',
-      pasajeros: [] // Inicializar como array vacío
+      pasajeros: []
     };
-    
-    this.viajeService.programarViaje(nuevoViaje).subscribe(
-      (viaje) => {
-        this.mostrarToast('Viaje programado con éxito', 'success');
-        this.router.navigate(['/conductor-dashboard']);
-      },
-      (error) => {
-        this.mostrarToast('Error al programar el viaje', 'danger');
-      }
-    );
+
+    try {
+      await this.viajeService.programarViaje(nuevoViaje).toPromise();
+      await this.mostrarToast('Viaje programado con éxito', 'success');
+      this.router.navigate(['/conductor-dashboard']);
+    } catch (error) {
+      console.error('Error al programar viaje:', error);
+      await this.mostrarToast('Error al programar el viaje', 'danger');
+    }
   }
 
-  // Método para mostrar el formulario de agregar vehículo
+  // Métodos para manejar vehículos
   toggleAddVehicleForm() {
     this.showAddVehicleForm = !this.showAddVehicleForm;
   }
 
-  // Método para agregar un nuevo vehículo
-  addVehicle() {
-    this.authService.addVehicle(this.newVehicle);
-    this.vehicles.push(this.newVehicle);
-    this.selectedVehicle = this.newVehicle;
-    this.newVehicle = { modeloVehiculo: '', patente: '', licencia: '' };
-    this.showAddVehicleForm = false;
-    this.mostrarToast('Vehículo agregado con éxito', 'success');
+  async addVehicle() {
+    const success = await this.authService.addVehicle(this.newVehicle);
+    if (success) {
+      this.vehicles = await this.authService.getVehicles();
+      this.selectedVehicle = this.newVehicle;
+      this.newVehicle = { modeloVehiculo: '', patente: '', licencia: '' };
+      this.showAddVehicleForm = false;
+      await this.mostrarToast('Vehículo agregado con éxito', 'success');
+    }
   }
 
-  // Método para mostrar mensajes toast
-  async mostrarToast(mensaje: string, color: string) {
+  // Utilidad para mostrar mensajes toast
+  private async mostrarToast(mensaje: string, color: string) {
     const toast = await this.toastController.create({
       message: mensaje,
       duration: 2000,
       color: color
     });
-    toast.present();
+    await toast.present();
   }
 }

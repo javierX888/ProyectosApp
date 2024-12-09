@@ -1,10 +1,8 @@
-// src/app/conductor-dashboard/conductor-dashboard.page.ts
-
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { AlertController, LoadingController } from '@ionic/angular';
 import { AuthService } from '../services/auth.service';
-import { ViajeService, Viaje, EstadisticasConductor } from '../services/viaje.service';
+import { ViajeService, Viaje } from '../services/viaje.service';
 
 @Component({
   selector: 'app-conductor-dashboard',
@@ -12,11 +10,16 @@ import { ViajeService, Viaje, EstadisticasConductor } from '../services/viaje.se
   styleUrls: ['./conductor-dashboard.page.scss'],
 })
 export class ConductorDashboardPage implements OnInit {
+  // Propiedades para el perfil
   nombreUsuario: string = '';
+  email: string = '';
+  profileImage: string | null = null;
+
+  // Propiedades para estadísticas
   viajesActivos: number = 0;
   totalPasajeros: number = 0;
-  viajesProgramados: Viaje[] = [];
-  perfilVisible: boolean = false; 
+
+  // Propiedades para vehículos
   showAddVehicleForm: boolean = false;
   newVehicle: any = {
     modeloVehiculo: '',
@@ -25,55 +28,114 @@ export class ConductorDashboardPage implements OnInit {
   };
   vehicles: any[] = [];
 
+  // Propiedades para viajes
+  viajesProgramados: Viaje[] = [];
+
   constructor(
     private router: Router,
-    public authService: AuthService, // Public para acceso desde el template
+    private authService: AuthService,
     private viajeService: ViajeService,
     private alertController: AlertController,
     private loadingController: LoadingController
   ) { }
 
-  ngOnInit() {
-    this.cargarDatosUsuario();
-    this.cargarEstadisticas();
-    this.cargarViajesProgramados();
-    this.vehicles = this.authService.getVehicles();
-  }
-
   ionViewWillEnter() {
-    this.cargarEstadisticas();
-    this.cargarViajesProgramados();
-    this.vehicles = this.authService.getVehicles();
+    // Este método se ejecuta cada vez que la página se va a mostrar
+    this.cargarDatosUsuario();
+}
+
+  async ngOnInit() {
+    await this.cargarDatosUsuario();
+    await this.cargarVehiculos();
+    await this.cargarEstadisticas();
+    await this.cargarViajesProgramados();
   }
 
-  cargarDatosUsuario() {
-    this.nombreUsuario = this.authService.getNombre();
-  }
-
-  cargarEstadisticas() {
-    this.viajeService.getEstadisticasConductor(this.authService.getUsername())
-      .then((stats: EstadisticasConductor) => {
-        this.viajesActivos = stats.viajesActivos;
-        this.totalPasajeros = stats.totalPasajeros;
-      })
-      .catch(error => {
-        console.error('Error cargando estadísticas:', error);
-      });
-  }
-
-  cargarViajesProgramados() {
-    this.viajeService.getViajesProgramados(this.authService.getUsername()).subscribe(
-      (viajes: Viaje[]) => {
-        this.viajesProgramados = viajes;
-      },
-      error => {
-        console.error('Error cargando viajes programados:', error);
+  async cargarDatosUsuario() {
+    try {
+      const currentUser = this.authService.getCurrentUser();
+      
+      if (!currentUser) {
+        const token = await this.authService.getToken();
+        if (token) {
+          const payload = this.authService.decodeToken(token);
+          if (payload) {
+            this.nombreUsuario = payload.nombre || '';
+            this.email = payload.email || '';
+            console.log('Datos cargados desde token:', { nombre: this.nombreUsuario, email: this.email });
+          }
+        }
+      } else {
+        this.nombreUsuario = currentUser.nombre || '';
+        this.email = currentUser.email || '';
+        console.log('Datos cargados desde currentUser:', { nombre: this.nombreUsuario, email: this.email });
       }
-    );
+    } catch (error) {
+      console.error('Error al cargar datos del usuario:', error);
+      // Podríamos mostrar un mensaje al usuario
+      const errorMessage = error instanceof Error ? error.message : 'Error al cargar datos del usuario';
+      // Aquí podrías mostrar un toast o alguna otra notificación
+    }
+  }
+
+  async cargarVehiculos() {
+    this.vehicles = await this.authService.getVehicles();
+  }
+
+  async cargarEstadisticas() {
+    try {
+      const stats = await this.viajeService.getEstadisticasConductor(this.authService.getUsername());
+      this.viajesActivos = stats.viajesActivos;
+      this.totalPasajeros = stats.totalPasajeros;
+    } catch (error) {
+      console.error('Error al cargar estadísticas:', error);
+    }
+  }
+
+  async cargarViajesProgramados() {
+    try {
+      const viajes = await this.viajeService.getViajesProgramados(this.authService.getUsername()).toPromise();
+      // Aseguramos que siempre sea un array, incluso si la respuesta es null o undefined
+      this.viajesProgramados = viajes || [];
+      console.log('Viajes programados cargados:', this.viajesProgramados);
+    } catch (error) {
+      console.error('Error al cargar viajes programados:', error);
+      // En caso de error, mantenemos el array vacío
+      this.viajesProgramados = [];
+      // Podríamos mostrar un mensaje al usuario si lo deseamos
+    }
+  }
+
+  toggleAddVehicleForm() {
+    this.showAddVehicleForm = !this.showAddVehicleForm;
+  }
+
+  async addVehicle() {
+    if (!this.newVehicle.modeloVehiculo || !this.newVehicle.patente || !this.newVehicle.licencia) {
+      // Mostrar mensaje de error
+      return;
+    }
+
+    try {
+      await this.authService.addVehicle(this.newVehicle);
+      await this.cargarVehiculos();
+      this.showAddVehicleForm = false;
+      this.newVehicle = {
+        modeloVehiculo: '',
+        patente: '',
+        licencia: ''
+      };
+    } catch (error) {
+      console.error('Error al agregar vehículo:', error);
+    }
   }
 
   programarViaje() {
     this.router.navigate(['/programar-viaje']);
+  }
+
+  verTodosLosViajes() {
+    this.router.navigate(['/viajes-programados']);
   }
 
   verHistorial() {
@@ -82,6 +144,11 @@ export class ConductorDashboardPage implements OnInit {
 
   verViajesProgramados() {
     this.router.navigate(['/viajes-programados']);
+  }
+
+  mostrarPerfil() {
+    // Por ahora solo recarga los datos del usuario
+    this.cargarDatosUsuario();
   }
 
   async cerrarSesion() {
@@ -96,68 +163,13 @@ export class ConductorDashboardPage implements OnInit {
         {
           text: 'Sí, cerrar sesión',
           handler: async () => {
-            const loading = await this.loadingController.create({
-              message: 'Cerrando sesión...'
-            });
-            await loading.present();
-
-            try {
-              this.authService.logout();
-              await loading.dismiss();
-              this.router.navigate(['/home'], { replaceUrl: true });
-            } catch (error: any) {
-              console.error('Error al cerrar sesión:', error);
-              await loading.dismiss();
-            }
+            await this.authService.logout();
+            this.router.navigate(['/login'], { replaceUrl: true });
           }
         }
       ]
     });
 
     await alert.present();
-  }
-
-  // Método para mostrar la sección de perfil
-  mostrarPerfil() {
-    this.perfilVisible = true;
-  }
-
-  // Método para ocultar la sección de perfil (opcional)
-  ocultarPerfil() {
-    this.perfilVisible = false;
-  }
-
-  // Método para alternar el formulario de agregar vehículo
-  toggleAddVehicleForm() {
-    this.showAddVehicleForm = !this.showAddVehicleForm;
-  }
-
-  // Método para agregar un nuevo vehículo
-  addVehicle() {
-    if (this.newVehicle.modeloVehiculo && this.newVehicle.patente && this.newVehicle.licencia) {
-      this.authService.addVehicle(this.newVehicle);
-      this.vehicles = this.authService.getVehicles(); // Actualizar la lista de vehículos
-      this.newVehicle = { modeloVehiculo: '', patente: '', licencia: '' };
-      this.showAddVehicleForm = false;
-      this.perfilVisible = true; // Mantener el perfil visible después de agregar
-      // Opcional: mostrar un mensaje de éxito
-    } else {
-      // Opcional: mostrar un mensaje de error
-      console.error('Por favor, completa todos los campos del vehículo.');
-    }
-  }
-
-  // Método para refrescar datos (si lo necesitas)
-  async doRefresh(event: any) {
-    try {
-      await Promise.all([
-        this.cargarEstadisticas(),
-        this.cargarViajesProgramados()
-      ]);
-    } finally {
-      if (event && event.target) {
-        event.target.complete();
-      }
-    }
   }
 }

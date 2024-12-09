@@ -1,5 +1,20 @@
 import { Injectable } from '@angular/core';
-import { Observable, of, throwError } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { Observable, of } from 'rxjs';
+import { tap, catchError, map } from 'rxjs/operators';
+import { environment } from '../../environments/environment';
+
+export interface Conductor {
+  id: string;
+  nombre: string;
+  email: string;
+}
+
+export interface Vehiculo {
+  id: string;
+  modeloVehiculo: string;
+  patente: string;
+}
 
 export interface Viaje {
   id: number;
@@ -9,6 +24,7 @@ export interface Viaje {
   hora?: string; // Opcional si usas hora
   asientosDisponibles: number;
   precio: number;
+  conductor?: string;
   conductorNombre: string;
   patente?: string;
   vehiculo: any;
@@ -32,8 +48,11 @@ export interface EstadisticasPasajero {
 })
 export class ViajeService {
   private viajes: Viaje[] = [];
+  private apiUrl = environment.apiUrl; // Añadimos la URL de la API
 
-  constructor() {
+  constructor(
+    private http: HttpClient
+  ) {
     // Cargar viajes desde localStorage si existen
     const storedViajes = localStorage.getItem('viajes');
     if (storedViajes) {
@@ -46,20 +65,23 @@ export class ViajeService {
     localStorage.setItem('viajes', JSON.stringify(this.viajes));
   }
 
-  // Programar un nuevo viaje
+  // Programar un nuevo viaje (Local)
   programarViaje(viaje: Viaje): Observable<Viaje> {
-    const nuevoViaje: Viaje = {
-      ...viaje,
-      id: this.viajes.length + 1,
-      estado: 'disponible',
-      pasajeros: [],
-    };
-    this.viajes.push(nuevoViaje);
-    this.saveViajes();
-    return of(nuevoViaje);
-  }
+    // Asumiendo que 'viaje' contiene origen, destino, fecha, hora, asientosDisponibles, precio, vehiculoId
+    return this.http.post<Viaje>(`${this.apiUrl}/viajes`, viaje).pipe(
+      tap(viajeCreado => {
+        // Opcional: Actualizar el array local
+        this.viajes.push(viajeCreado);
+        this.saveViajes();
+      }),
+      catchError(error => {
+        console.error('Error al crear viaje en el backend:', error);
+        return of(null as unknown as Viaje);
+      })
+    );
+  }  
 
-  // Obtener todos los viajes programados por un conductor
+  // Obtener todos los viajes programados por un conductor (Local)
   getViajesProgramados(conductorNombre: string): Observable<Viaje[]> {
     const viajesConductor = this.viajes.filter(
       (v) => v.conductorNombre === conductorNombre
@@ -67,16 +89,15 @@ export class ViajeService {
     return of(viajesConductor);
   }
 
-  // Obtener viajes disponibles por conductor
   getViajesDisponibles(conductorNombre: string): Observable<Viaje[]> {
     const disponibles = this.viajes.filter(
-      (v) =>
-        v.conductorNombre === conductorNombre && v.estado === 'disponible'
+      (v) => v.conductorNombre === conductorNombre && v.estado === 'disponible'
     );
     return of(disponibles);
   }
+  
 
-  // Obtener viajes reservados por conductor
+  // Obtener viajes reservados por conductor (Local)
   getViajesReservados(conductorNombre: string): Observable<Viaje[]> {
     const reservados = this.viajes.filter(
       (v) =>
@@ -85,7 +106,7 @@ export class ViajeService {
     return of(reservados);
   }
 
-  // Obtener viajes completados por conductor
+  // Obtener viajes completados por conductor (Local)
   getViajesCompletados(conductorNombre: string): Observable<Viaje[]> {
     const completados = this.viajes.filter(
       (v) =>
@@ -94,15 +115,27 @@ export class ViajeService {
     return of(completados);
   }
 
-  // Obtener historial de viajes de un pasajero
-  getHistorialViajes(username: string): Observable<Viaje[]> {
-    const historial = this.viajes.filter((v) =>
-      v.pasajeros.includes(username)
+  // Obtener historial de viajes de un pasajero (usa API)
+  getHistorialViajes(userId: string): Observable<Viaje[]> {
+    return this.http.get<Viaje[]>(`${this.apiUrl}/viajes/historial/${userId}`).pipe(
+      tap((viajes: Viaje[]) => {
+        console.log('Viajes obtenidos:', viajes);
+        // Actualizamos el almacenamiento local
+        this.viajes = [...this.viajes, ...viajes];
+        this.saveViajes();
+      }),
+      catchError((error: any) => {
+        console.error('Error al obtener historial:', error);
+        // En caso de error, devolvemos los viajes del almacenamiento local
+        const viajesLocales = this.viajes.filter(v =>
+          v.pasajeros.includes(userId) || v.conductorNombre === userId
+        );
+        return of(viajesLocales);
+      })
     );
-    return of(historial);
   }
 
-  // Reservar un viaje
+  // Reservar un viaje (Local)
   reservarViaje(viajeId: number, username: string): Observable<boolean> {
     const viaje = this.viajes.find((v) => v.id === viajeId);
     if (viaje && viaje.estado === 'disponible' && viaje.asientosDisponibles > 0) {
@@ -115,7 +148,7 @@ export class ViajeService {
     return of(false);
   }
 
-  // Aceptar un viaje reservado
+  // Aceptar un viaje reservado (Local)
   aceptarViaje(viajeId: number): Observable<boolean> {
     const viaje = this.viajes.find((v) => v.id === viajeId);
     if (viaje && viaje.estado === 'reservado') {
@@ -126,7 +159,7 @@ export class ViajeService {
     return of(false);
   }
 
-  // Cancelar un viaje reservado
+  // Cancelar un viaje reservado (Local)
   cancelarViaje(viajeId: number): Observable<boolean> {
     const viajeIndex = this.viajes.findIndex((v) => v.id === viajeId);
     if (viajeIndex !== -1) {
@@ -142,9 +175,9 @@ export class ViajeService {
     return of(false);
   }
 
-  // Obtener estadísticas de un conductor
+  // Obtener estadísticas de un conductor (Local)
   getEstadisticasConductor(username: string): Promise<EstadisticasConductor> {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       const viajesActivos = this.viajes.filter(
         (v) => v.conductorNombre === username && v.estado === 'aceptado'
       ).length;
@@ -157,9 +190,9 @@ export class ViajeService {
     });
   }
 
-  // Obtener estadísticas de un pasajero
+  // Obtener estadísticas de un pasajero (Local)
   getEstadisticasPasajero(username: string): Promise<EstadisticasPasajero> {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       const viajesReservados = this.viajes.filter(
         (v) =>
           v.pasajeros.includes(username) && v.estado === 'reservado'
@@ -172,5 +205,25 @@ export class ViajeService {
 
       resolve({ viajesReservados, viajesCompletados });
     });
+  }
+
+  // *** NUEVO MÉTODO PARA OBTENER VIAJES DESDE LA API POR ORIGEN ***
+  getViajesPorOrigen(origen: string): Observable<Viaje[]> {
+    const url = origen 
+      ? `${this.apiUrl}/viajes/disponibles?origen=${encodeURIComponent(origen)}`
+      : `${this.apiUrl}/viajes/disponibles`;
+
+    return this.http.get<Viaje[]>(url).pipe(
+      tap((viajes: Viaje[]) => {
+        console.log('Viajes obtenidos desde la API:', viajes);
+        // Opcional: Guardar en localStorage
+        this.viajes = viajes;
+        this.saveViajes();
+      }),
+      catchError((error: any) => {
+        console.error('Error al obtener viajes por origen:', error);
+        return of([]);
+      })
+    );
   }
 }

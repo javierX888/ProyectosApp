@@ -1,5 +1,5 @@
 import { Component, Input } from '@angular/core';
-import { ViajeService } from '../services/viaje.service';
+import { ViajeService } from './services/viaje.service';
 import { ToastController } from '@ionic/angular';
 
 @Component({
@@ -8,7 +8,7 @@ import { ToastController } from '@ionic/angular';
   styleUrls: ['./viajes-pasajero.component.scss'],
 })
 export class ViajesPasajeroComponent {
-  @Input() viajeId: number;
+  @Input() viajeId: number = 0;
 
   constructor(
     private viajeService: ViajeService,

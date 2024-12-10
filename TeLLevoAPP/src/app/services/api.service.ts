@@ -73,17 +73,18 @@ export class ApiService {
   }
 
   login(email: string, password: string): Observable<LoginResponse> {
-    return this.http.post<LoginResponse>(`${this.apiUrl}/users/login`, {
+    console.log('API URL:', this.apiUrl); // Añade esta línea
+    return this.http.post<LoginResponse>(`${this.apiUrl}/api/users/login`, {
       email,
       contraseña: password
     }).pipe(
       tap(response => this.saveToken(response.token)),
       catchError(this.handleError)
     );
-  }
+  }  
 
   register(userData: UserData): Observable<LoginResponse> {
-    return this.http.post<LoginResponse>(`${this.apiUrl}/users/register`, userData).pipe(
+    return this.http.post<LoginResponse>(`${this.apiUrl}/api/users/register`, userData).pipe(
       tap(response => this.saveToken(response.token)),
       catchError(this.handleError)
     );
@@ -122,7 +123,7 @@ export class ApiService {
 
   getProfile(): Observable<any> {
     return this.getAuthHeaders().pipe(
-      switchMap(headers => this.http.get(`${this.apiUrl}/users/profile`, { headers })),
+      switchMap(headers => this.http.get(`${this.apiUrl}/api/users/profile`, { headers })),
       catchError(this.handleError)
     );
   }

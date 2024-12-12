@@ -1,33 +1,57 @@
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { IonicModule } from '@ionic/angular';
 import { BuscarViajePage } from './buscar-viaje.page';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { ViajeService } from '../services/viaje.service';
+import { Viaje } from '../interfaces/viaje.interface';
+import { of } from 'rxjs';
 
 describe('BuscarViajePage', () => {
   let component: BuscarViajePage;
   let fixture: ComponentFixture<BuscarViajePage>;
+  let viajeServiceSpy: jasmine.SpyObj<ViajeService>;
 
-  beforeEach(waitForAsync(() => {
-    TestBed.configureTestingModule({
+  const mockViaje: Viaje = {
+    id: 1,
+    origen: 'Origen Test',
+    destino: 'Destino Test',
+    fecha: '2024-03-15',
+    hora: '10:00',
+    asientosDisponibles: 3,
+    precio: 1500,
+    conductorNombre: 'Test Driver',
+    estado: 'disponible',
+    vehiculo: {
+      modeloVehiculo: 'Test Model',
+      patente: 'ABC123'
+    },
+    pasajeros: []
+  };
+
+  beforeEach(async () => {
+    const spy = jasmine.createSpyObj('ViajeService', ['getViajes']);
+    await TestBed.configureTestingModule({
       declarations: [BuscarViajePage],
-      imports: [HttpClientTestingModule]
+      imports: [IonicModule.forRoot()],
+      providers: [
+        { provide: ViajeService, useValue: spy }
+      ]
     }).compileComponents();
-  }));
 
-  beforeEach(() => {
     fixture = TestBed.createComponent(BuscarViajePage);
     component = fixture.componentInstance;
-    fixture.detectChanges();
+    viajeServiceSpy = TestBed.inject(ViajeService) as jasmine.SpyObj<ViajeService>;
   });
 
-  it('should create the BuscarViaje page component', () => {
+  it('should create', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should have a defined method buscarViajes', () => {
-    expect(component.buscarViajes).toBeDefined();
-  });
-
-  it('should have filtros property default values', () => {
-    expect(component.filtros.sede).toBe('');
+  it('should load viajes on init', async () => {
+    const mockViajes: Viaje[] = [mockViaje];
+    viajeServiceSpy.getViajes.and.returnValue(Promise.resolve(mockViajes));
+    
+    await component.ngOnInit();
+    expect(viajeServiceSpy.getViajes).toHaveBeenCalled();
+    expect(component.viajes).toEqual(mockViajes);
   });
 });

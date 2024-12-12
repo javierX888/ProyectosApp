@@ -1,10 +1,11 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import { ToastController } from '@ionic/angular';
-import { ViajeService, Viaje } from '../services/viaje.service';
+import { ViajeService } from '../services/viaje.service';
 import { LocationService } from '../services/location.service';
 import { AuthService } from '../services/auth.service';
 import { NgForm } from '@angular/forms';
+import { Viaje } from '../interfaces/viaje.interface';
 
 @Component({
   selector: 'app-programar-viaje',
@@ -83,6 +84,7 @@ export class ProgramarViajePage implements OnInit {
       origen: this.sedeOrigen,
       destino: this.comunaDestino,
       fecha: this.fecha,
+      hora: this.viajeForm.value.hora,
       asientosDisponibles: this.asientosDisponibles,
       precio: this.precio,
       conductorNombre: this.authService.getUsername(),

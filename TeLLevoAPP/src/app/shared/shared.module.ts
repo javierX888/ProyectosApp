@@ -1,12 +1,11 @@
+// src/app/shared/shared.module.ts
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
-import { ViajesConductorComponent } from '../viajes-conductor.component';
-import { ViajesPasajeroComponent } from '../viajes-pasajero.component';
+import { ViajesPasajeroComponent } from '../components/viajes-pasajero/viajes-pasajero.component';
 
 @NgModule({
   declarations: [
-    ViajesConductorComponent,
     ViajesPasajeroComponent
   ],
   imports: [
@@ -14,8 +13,9 @@ import { ViajesPasajeroComponent } from '../viajes-pasajero.component';
     IonicModule
   ],
   exports: [
-    ViajesConductorComponent,
-    ViajesPasajeroComponent
+    ViajesPasajeroComponent,
+    CommonModule,
+    IonicModule
   ]
 })
-export class SharedModule {}
+export class SharedModule { }

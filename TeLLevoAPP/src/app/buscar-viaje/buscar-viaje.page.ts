@@ -1,9 +1,7 @@
 import { Component, OnInit } from '@angular/core';
-import { ApiService } from '../services/api.service';
-import { ViajeService, Viaje } from '../services/viaje.service';
 import { LoadingController, ToastController } from '@ionic/angular';
-import { AuthService } from '../services/auth.service';
-import { firstValueFrom } from 'rxjs';
+import { ViajeService } from '../services/viaje.service';
+import { Viaje } from '../interfaces/viaje.interface';
 
 @Component({
   selector: 'app-buscar-viaje',
@@ -11,30 +9,25 @@ import { firstValueFrom } from 'rxjs';
   styleUrls: ['./buscar-viaje.page.scss'],
 })
 export class BuscarViajePage implements OnInit {
+  viajes: Viaje[] = [];
   filtros = {
     sede: '',
-    fecha: new Date().toISOString(),
+    fecha: '',
     rangoHora: ''
   };
-
-  viajes: Viaje[] = [];
   sedes = [
-    { sede: 'Antonio Varas', comuna: 'Providencia' },
-    { sede: 'San Joaquín', comuna: 'San Joaquín' },
-    { sede: 'Plaza Vespucio', comuna: 'La Florida' },
-    { sede: 'Maipú', comuna: 'Maipú' },
-    { sede: 'Melipilla', comuna: 'Melipilla' }
+    { sede: 'Plaza Norte', comuna: 'Huechuraba' },
+    { sede: 'Plaza Oeste', comuna: 'Cerrillos' },
+    { sede: 'Plaza Sur', comuna: 'San Bernardo' },
+    { sede: 'Plaza Vespucio', comuna: 'La Florida' }
   ];
-
-  fechaMinima = new Date().toISOString();
-  fechaMaxima = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+  fechaMinima: string = new Date().toISOString();
+  fechaMaxima: string = new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString();
 
   constructor(
-    private apiService: ApiService,
     private viajeService: ViajeService,
-    private authService: AuthService,
-    private loadingCtrl: LoadingController,
-    private toastCtrl: ToastController
+    private loadingController: LoadingController,
+    private toastController: ToastController
   ) {}
 
   ngOnInit() {
@@ -42,66 +35,84 @@ export class BuscarViajePage implements OnInit {
   }
 
   async buscarViajes() {
-    const loading = await this.loadingCtrl.create({
-      message: 'Buscando viajes disponibles...'
-    });
-    await loading.present();
-  
-    try {
-      const sedeSeleccionada = this.filtros.sede || '';
-      // Llamamos al método del viaje.service que obtiene viajes desde la API por origen
-      const viajesDisponibles = await firstValueFrom(this.viajeService.getViajesPorOrigen(sedeSeleccionada));
-      this.viajes = viajesDisponibles;
-    } catch (error) {
-      console.error('Error al buscar viajes:', error);
-      this.mostrarToast('Error al cargar los viajes disponibles', 'danger');
-    } finally {
-      loading.dismiss();
-    }
-  }
-  
-  async reservarViaje(viaje: Viaje) {
-    const loading = await this.loadingCtrl.create({
-      message: 'Procesando reserva...'
+    const loading = await this.loadingController.create({
+      message: 'Buscando viajes...'
     });
     await loading.present();
 
     try {
-      const username = this.authService.getUserEmail();
-      await firstValueFrom(this.viajeService.reservarViaje(viaje.id, username));
-      this.mostrarToast('Viaje reservado exitosamente', 'success');
+      this.viajes = await this.viajeService.getViajes();
+      await loading.dismiss();
+    } catch (error) {
+      await loading.dismiss();
+      const toast = await this.toastController.create({
+        message: 'Error al buscar viajes',
+        duration: 2000,
+        position: 'bottom',
+        color: 'danger'
+      });
+      await toast.present();
+    }
+  }
+
+  async reservarViaje(viaje: Viaje) {
+    const loading = await this.loadingController.create({
+      message: 'Reservando viaje...'
+    });
+    await loading.present();
+
+    try {
+      await this.viajeService.reservarViaje(viaje.id, 'usuario_actual');
+      await loading.dismiss();
+      const toast = await this.toastController.create({
+        message: 'Viaje reservado exitosamente',
+        duration: 2000,
+        position: 'bottom',
+        color: 'success'
+      });
+      await toast.present();
       this.buscarViajes();
     } catch (error) {
-      console.error('Error al reservar:', error);
-      this.mostrarToast('Error al realizar la reserva', 'danger');
-    } finally {
-      loading.dismiss();
+      await loading.dismiss();
+      const toast = await this.toastController.create({
+        message: 'Error al reservar el viaje',
+        duration: 2000,
+        position: 'bottom',
+        color: 'danger'
+      });
+      await toast.present();
     }
-  }
-
-  async doRefresh(event: any) {
-    try {
-      await this.buscarViajes();
-    } finally {
-      event.target.complete();
-    }
-  }
-
-  async mostrarToast(mensaje: string, color: string = 'primary') {
-    const toast = await this.toastCtrl.create({
-      message: mensaje,
-      duration: 2000,
-      color: color,
-      position: 'bottom'
-    });
-    await toast.present();
   }
 
   verDetalles(viaje: Viaje) {
     console.log('Ver detalles del viaje:', viaje);
+    // Implementar navegación a detalles
   }
 
   contactarConductor(viaje: Viaje) {
-    console.log('Contactar al conductor:', viaje.conductorNombre);
+    console.log('Contactar conductor:', viaje.conductorNombre);
+    // Implementar lógica de contacto
+  }
+
+  doRefresh(event: any) {
+    this.buscarViajes().then(() => {
+      event.target.complete();
+    });
+  }
+
+  async presentToast(message: string, color: string = 'primary') {
+    const toast = await this.toastController.create({
+      message,
+      duration: 2000,
+      position: 'bottom',
+      color
+    });
+    await toast.present();
+  }
+
+  filtrarViajes() {
+    // Implementar lógica de filtrado
+    console.log('Filtros aplicados:', this.filtros);
+    this.buscarViajes();
   }
 }

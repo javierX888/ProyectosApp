@@ -4,6 +4,7 @@ import { Storage } from '@ionic/storage-angular';
 import { environment } from '../../environments/environment';
 import { Observable, throwError, from } from 'rxjs';
 import { catchError, tap, switchMap, map } from 'rxjs/operators';
+import { Viaje } from '../interfaces/viaje.interface';
 
 export interface VehicleData {
   modeloVehiculo: string;

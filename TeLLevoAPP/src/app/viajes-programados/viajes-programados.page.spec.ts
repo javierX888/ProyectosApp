@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ViajesProgramadosPage } from './viajes-programados.page';
+import { Viaje } from '../interfaces/viaje.interface';
 
 describe('ViajesProgramadosPage', () => {
   let component: ViajesProgramadosPage;

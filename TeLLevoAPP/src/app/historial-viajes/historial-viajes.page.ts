@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
-import { ViajeService, Viaje } from '../services/viaje.service'; // Importar Viaje desde el servicio
+import { ViajeService } from '../services/viaje.service';
+import { Viaje } from '../interfaces/viaje.interface';
 import { AuthService } from '../services/auth.service';
 import { ToastController } from '@ionic/angular';
 
@@ -11,8 +12,6 @@ import { ToastController } from '@ionic/angular';
 export class HistorialViajesPage implements OnInit {
   historial: Viaje[] = [];
   username: string = '';
-  
-  // Propiedades faltantes
   filtroEstado: string = 'todos';
   historialViajes: Viaje[] = [];
   historialViajesFiltrados: Viaje[] = [];

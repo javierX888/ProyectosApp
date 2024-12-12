@@ -1,5 +1,8 @@
 import { Component, Input, OnInit } from '@angular/core';
-import { ApiService } from '../app/services/api.service';
+import { ApiService } from '../../services/api.service';
+import { ViajeService } from '../../services/viaje.service';
+import { AuthService } from '../../services/auth.service';
+import { Viaje } from '../../interfaces/viaje.interface';
 
 @Component({
   selector: 'app-viajes-conductor',

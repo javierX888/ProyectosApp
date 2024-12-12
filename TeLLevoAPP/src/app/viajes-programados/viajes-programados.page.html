@@ -16,7 +16,7 @@
           <ion-label>
             <h2>{{ viaje.destino }}</h2>
             <p>{{ viaje.fecha | date:'medium' }}</p>
-            <p>Vehículo: {{ viaje.vehiculo.modeloVehiculo }} - {{ viaje.vehiculo.patente }}</p>
+            <p>Vehículo: {{ viaje.vehiculo?.modeloVehiculo }} - {{ viaje.vehiculo?.patente }}</p>
             <p>Asientos Disponibles: {{ viaje.asientosDisponibles }}</p>
             <p>Precio: ${{ viaje.precio }}</p>
           </ion-label>
@@ -42,7 +42,7 @@
           <ion-label>
             <h2>{{ viaje.destino }}</h2>
             <p>{{ viaje.fecha | date:'medium' }}</p>
-            <p>Vehículo: {{ viaje.vehiculo.modeloVehiculo }} - {{ viaje.vehiculo.patente }}</p>
+            <p>Vehículo: {{ viaje.vehiculo?.modeloVehiculo }} - {{ viaje.vehiculo?.patente }}</p>
             <p>Pasajero: {{ viaje.pasajeroNombre }}</p>
             <p>Precio: ${{ viaje.precio }}</p>
           </ion-label>
@@ -75,7 +75,7 @@
           <ion-label>
             <h2>{{ viaje.destino }}</h2>
             <p>{{ viaje.fecha | date:'medium' }}</p>
-            <p>Vehículo: {{ viaje.vehiculo.modeloVehiculo }} - {{ viaje.vehiculo.patente }}</p>
+            <p>Vehículo: {{ viaje.vehiculo?.modeloVehiculo }} - {{ viaje.vehiculo?.patente }}</p>
             <p>Pasajero: {{ viaje.pasajeroNombre }}</p>
             <p>Precio: ${{ viaje.precio }}</p>
           </ion-label>

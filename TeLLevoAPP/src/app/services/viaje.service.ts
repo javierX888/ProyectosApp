@@ -1,64 +1,98 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { Observable, of } from 'rxjs';
+import { map, catchError } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
-import { Observable, from, of } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
 import { Viaje } from '../interfaces/viaje.interface';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ViajeService {
+  private apiUrl = environment.apiUrl;
+
   constructor(private http: HttpClient) {}
 
   async getViajes(): Promise<Viaje[]> {
     try {
-      const viajes = await this.http.get<Viaje[]>(`${environment.apiUrl}/viajes`).toPromise();
-      return viajes ?? [];
+      return await this.http.get<Viaje[]>(`${this.apiUrl}/viajes`).toPromise() || [];
     } catch (error) {
       console.error('Error:', error);
       return [];
     }
   }
 
-  getViajesDisponibles(): Observable<Viaje[]> {
-    return this.http.get<Viaje[]>(`${environment.apiUrl}/viajes/disponibles`).pipe(
-      map(viajes => viajes ?? []),
-      catchError(error => {
+  getEstadisticasPasajero(email: string): Observable<any> {
+    return this.http.get(`${this.apiUrl}/pasajero/${email}/estadisticas`).pipe(
+      catchError((error: HttpErrorResponse) => {
+        console.error('Error:', error);
+        return of(null);
+      })
+    );
+  }
+  
+  getViajesDisponibles(): Promise<Viaje[]> {
+    return this.http.get<Viaje[]>(`${this.apiUrl}/viajes/disponibles`)
+      .pipe(
+        map(viajes => viajes || [])
+      )
+      .toPromise()
+      .then(viajes => viajes || []);
+  }
+
+  getEstadisticasConductor(username: string): Observable<any> {
+    return this.http.get(`${this.apiUrl}/conductor/${username}/estadisticas`).pipe(
+      catchError((error: HttpErrorResponse) => {
+        console.error('Error:', error);
+        return of(null);
+      })
+    );
+  }
+
+  getViajesProgramados(username: string): Observable<Viaje[]> {
+    return this.http.get<Viaje[]>(`${this.apiUrl}/conductor/${username}/viajes`).pipe(
+      map((viajes: Viaje[]) => viajes || []),
+      catchError((error: HttpErrorResponse) => {
         console.error('Error:', error);
         return of([]);
       })
     );
   }
 
-  getEstadisticasConductor(username: string): Observable<any> {
-    return this.http.get(`${environment.apiUrl}/conductor/${username}/estadisticas`);
-  }
-
-  getEstadisticasPasajero(email: string): Observable<any> {
-    return this.http.get(`${environment.apiUrl}/pasajero/${email}/estadisticas`);
-  }
-
-  getViajesProgramados(username: string): Observable<Viaje[]> {
-    return this.http.get<Viaje[]>(`${environment.apiUrl}/conductor/${username}/viajes`).pipe(
-      map(viajes => viajes ?? [])
+  getViajesReservados(email: string): Observable<Viaje[]> {
+    return this.http.get<Viaje[]>(`${this.apiUrl}/pasajero/${email}/viajes`).pipe(
+      catchError((error: HttpErrorResponse) => {
+        console.error('Error:', error);
+        return of([]);
+      })
     );
   }
 
-  getViajesReservados(email: string): Observable<Viaje[]> {
-    return this.http.get<Viaje[]>(`${environment.apiUrl}/pasajero/${email}/viajes`);
-  }
-
   getHistorialViajes(username: string): Observable<Viaje[]> {
-    return this.http.get<Viaje[]>(`${environment.apiUrl}/viajes/historial/${username}`);
+    return this.http.get<Viaje[]>(`${this.apiUrl}/viajes/historial/${username}`).pipe(
+      catchError((error: HttpErrorResponse) => {
+        console.error('Error:', error);
+        return of([]);
+      })
+    );
   }
 
-  getViajesCompletados(username: string): Observable<Viaje[]> {
-    return this.http.get<Viaje[]>(`${environment.apiUrl}/viajes/completados/${username}`);
+  getViajesConductor(email: string): Observable<Viaje[]> {
+    return this.http.get<Viaje[]>(`${this.apiUrl}/viajes/conductor/${email}`).pipe(
+      catchError((error: HttpErrorResponse) => {
+        console.error('Error:', error);
+        return of([]);
+      })
+    );
   }
 
   programarViaje(viaje: Viaje): Observable<Viaje> {
-    return this.http.post<Viaje>(`${environment.apiUrl}/viajes`, viaje);
+    return this.http.post<Viaje>(`${this.apiUrl}/viajes`, viaje).pipe(
+      catchError((error: HttpErrorResponse) => {
+        console.error('Error:', error);
+        throw error;
+      })
+    );
   }
 
   reservarViaje(viajeId: number, pasajeroId: string): Observable<Viaje> {
@@ -70,10 +104,10 @@ export class ViajeService {
   }
 
   completarViaje(viajeId: number): Observable<Viaje> {
-    return this.http.put<Viaje>(`${environment.apiUrl}/viajes/${viajeId}/completar`, {});
+    return this.http.put<Viaje>(`${this.apiUrl}/viajes/${viajeId}/completar`, {});
   }
 
   cancelarViaje(viajeId: number): Observable<Viaje> {
-    return this.http.put<Viaje>(`${environment.apiUrl}/viajes/${viajeId}/cancelar`, {});
+    return this.http.put<Viaje>(`${this.apiUrl}/viajes/${viajeId}/cancelar`, {});
   }
 }

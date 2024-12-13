@@ -1,14 +1,11 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { AlertController, LoadingController } from '@ionic/angular';
+import { AlertController, LoadingController, ToastController } from '@ionic/angular';
 import { AuthService } from '../services/auth.service';
 import { ViajeService } from '../services/viaje.service';
 import { Viaje } from '../interfaces/viaje.interface';
-
-interface EstadisticasConductor {
-  viajesActivos: number;
-  totalPasajeros: number;
-}
+import { Vehicle } from '../interfaces/vehicle.interface';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
 @Component({
   selector: 'app-conductor-dashboard',
@@ -22,12 +19,8 @@ export class ConductorDashboardPage implements OnInit {
   viajesActivos: number = 0;
   totalPasajeros: number = 0;
   showAddVehicleForm: boolean = false;
-  newVehicle: any = {
-    modeloVehiculo: '',
-    patente: '',
-    licencia: ''
-  };
-  vehicles: any[] = [];
+  vehiculoForm: FormGroup;
+  vehicles: Vehicle[] = [];
   viajesProgramados: Viaje[] = [];
 
   constructor(
@@ -35,8 +28,16 @@ export class ConductorDashboardPage implements OnInit {
     private authService: AuthService,
     private viajeService: ViajeService,
     private alertController: AlertController,
-    private loadingController: LoadingController
-  ) { }
+    private loadingController: LoadingController,
+    private toastController: ToastController,
+    private fb: FormBuilder
+  ) {
+    this.vehiculoForm = this.fb.group({
+      modeloVehiculo: ['', Validators.required],
+      patente: ['', Validators.required],
+      licencia: ['', Validators.required]
+    });
+  }
 
   async ngOnInit() {
     await this.cargarDatosUsuario();
@@ -45,90 +46,94 @@ export class ConductorDashboardPage implements OnInit {
     await this.cargarViajesProgramados();
   }
 
-  ionViewWillEnter() {
-    this.cargarDatosUsuario();
-  }
-
-  async cargarEstadisticas() {
-    const username = this.authService.getUsername();
-    this.viajeService.getEstadisticasConductor(username)
-      .subscribe((estadisticas: EstadisticasConductor) => {
-        this.viajesActivos = estadisticas.viajesActivos;
-        this.totalPasajeros = estadisticas.totalPasajeros;
-      });
-  }
-
-  async cargarViajesProgramados() {
-    const username = this.authService.getUsername();
-    this.viajeService.getViajesProgramados(username)
-      .subscribe((viajes: Viaje[]) => {
-        this.viajesProgramados = viajes;
-      });
-  }
-
   async cargarDatosUsuario() {
-    const user = await this.authService.getCurrentUser();
-    if (user) {
-      this.nombreUsuario = user.nombre;
-      this.email = user.email;
+    try {
+      const perfil = await this.authService.getProfile().toPromise();
+      this.nombreUsuario = perfil.nombre || '';
+      this.email = perfil.email || '';
+      this.profileImage = perfil.imagen || null;
+    } catch (error) {
+      this.presentToast('Error al cargar datos del usuario', 'danger');
     }
   }
 
-  async cargarVehiculos() {
-    // Implementar lógica para cargar vehículos
+  async addVehicle() {
+    if (this.vehiculoForm.valid) {
+      const loading = await this.loadingController.create({
+        message: 'Agregando vehículo...'
+      });
+      await loading.present();
+
+      try {
+        await this.authService.addVehiculo(this.vehiculoForm.value).toPromise();
+        await this.cargarVehiculos();
+        this.showAddVehicleForm = false;
+        this.vehiculoForm.reset();
+        this.presentToast('Vehículo agregado exitosamente', 'success');
+      } catch (error) {
+        this.presentToast('Error al agregar vehículo', 'danger');
+      } finally {
+        await loading.dismiss();
+      }
+    }
   }
 
-  async cerrarSesion() {
-    const alert = await this.alertController.create({
-      header: 'Cerrar Sesión',
-      message: '¿Estás seguro que deseas cerrar sesión?',
-      buttons: [
-        {
-          text: 'Cancelar',
-          role: 'cancel'
-        },
-        {
-          text: 'Sí, cerrar sesión',
-          role: 'confirm'
-        }
-      ]
+  async presentToast(message: string, color: string) {
+    const toast = await this.toastController.create({
+      message,
+      duration: 2000,
+      color,
+      position: 'bottom'
     });
+    await toast.present();
+  }
 
-    await alert.present();
-    const { role } = await alert.onDidDismiss();
-    
-    if (role === 'confirm') {
-      await this.authService.logout();
-      this.router.navigate(['/login']);
+  async cargarVehiculos() {
+    try {
+      const vehiculos = await this.authService.getVehiculos().toPromise();
+      this.vehicles = vehiculos || [];
+    } catch (error) {
+      this.presentToast('Error al cargar vehículos', 'danger');
+    }
+  }
+
+  async cargarEstadisticas() {
+    try {
+      const viajes = await this.viajeService.getViajesConductor(this.email).toPromise() ?? [];
+      this.viajesActivos = viajes.filter((v: Viaje) => 
+        v.estado === 'aceptado' || v.estado === 'reservado'
+      ).length;
+      this.totalPasajeros = viajes.reduce((total: number, viaje: Viaje) => 
+        total + (viaje.pasajeros?.length || 0), 0);
+    } catch (error) {
+      this.presentToast('Error al cargar estadísticas', 'danger');
+      this.viajesActivos = 0;
+      this.totalPasajeros = 0;
+    }
+  }
+
+  async cargarViajesProgramados() {
+    try {
+      const viajes = await this.viajeService.getViajesProgramados(this.email).toPromise() ?? [];
+      this.viajesProgramados = viajes;
+    } catch (error) {
+      this.presentToast('Error al cargar viajes programados', 'danger');
+      this.viajesProgramados = [];
     }
   }
 
   toggleAddVehicleForm() {
     this.showAddVehicleForm = !this.showAddVehicleForm;
-  }
-
-  async addVehicle() {
-    const loading = await this.loadingController.create({
-      message: 'Agregando vehículo...'
-    });
-    await loading.present();
-
-    try {
-      // Implementar lógica para agregar vehículo
-      this.showAddVehicleForm = false;
-      this.newVehicle = {
-        modeloVehiculo: '',
-        patente: '',
-        licencia: ''
-      };
-      await loading.dismiss();
-    } catch (error) {
-      await loading.dismiss();
-      console.error('Error al agregar vehículo:', error);
+    if (!this.showAddVehicleForm) {
+      this.vehiculoForm.reset();
     }
   }
 
   programarViaje() {
+    if (this.vehicles.length === 0) {
+      this.presentToast('Debe agregar un vehículo antes de programar viajes', 'warning');
+      return;
+    }
     this.router.navigate(['/programar-viaje']);
   }
 
@@ -146,5 +151,19 @@ export class ConductorDashboardPage implements OnInit {
 
   verViajesProgramados() {
     this.router.navigate(['/viajes-programados']);
+  }
+
+
+
+  cerrarSesion() {
+    this.authService.logout();
+    this.router.navigate(['/login']);
+  }
+
+  ionViewWillEnter() {
+    this.cargarDatosUsuario();
+    this.cargarVehiculos();
+    this.cargarEstadisticas();
+    this.cargarViajesProgramados();
   }
 }

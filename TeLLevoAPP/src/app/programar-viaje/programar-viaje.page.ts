@@ -1,10 +1,11 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { ToastController } from '@ionic/angular';
+import { LoadingController, ToastController } from '@ionic/angular';
 import { ViajeService } from '../services/viaje.service';
 import { LocationService } from '../services/location.service';
 import { AuthService } from '../services/auth.service';
-import { NgForm } from '@angular/forms';
+import { Vehicle } from '../interfaces/vehicle.interface';
+import { Sede } from '../interfaces/sede.interface';
 import { Viaje } from '../interfaces/viaje.interface';
 
 @Component({
@@ -13,25 +14,26 @@ import { Viaje } from '../interfaces/viaje.interface';
   styleUrls: ['./programar-viaje.page.scss'],
 })
 export class ProgramarViajePage implements OnInit {
-  @ViewChild('viajeForm') viajeForm!: NgForm;
-
-  // Propiedades para almacenar los datos del viaje
-  sedes: any[] = [];
+  origen: string = '';
+  destino: string = '';
+  fecha: string = '';
+  hora: string = '';
+  asientosDisponibles: number = 1;
+  precio: number = 0;
+  conductorNombre: string = '';
+  fechaMinima: string = '';
+  sedes: Sede[] = [];
+  vehicles: Vehicle[] = [];
+  selectedVehicle: Vehicle | null = null;
+  showAddVehicleForm = false;
+  
+  // Propiedades faltantes del template
   sedeOrigen: string = '';
   regionOrigen: string = '';
   comunaDestino: string = '';
   comunasDestino: string[] = [];
-  fecha: string = '';
-  asientosDisponibles: number = 1;
-  precio: number = 0;
-  patente: string = '';
-  fechaMinima: string = '';
-  
-  // Propiedades relacionadas con los vehículos
-  vehicles: any[] = [];
-  selectedVehicle: any;
-  showAddVehicleForm: boolean = false;
-  newVehicle: any = {
+
+  newVehicle: Vehicle = {
     modeloVehiculo: '',
     patente: '',
     licencia: ''
@@ -40,92 +42,125 @@ export class ProgramarViajePage implements OnInit {
   constructor(
     private router: Router,
     private toastController: ToastController,
+    private loadingController: LoadingController,
     private viajeService: ViajeService,
     private locationService: LocationService,
     private authService: AuthService
   ) { }
 
-  async ngOnInit() {
-    // Inicialización de datos
-    this.sedes = this.locationService.getSedes();
-    this.fechaMinima = this.getLocalISOTime();
-    this.vehicles = await this.authService.getVehicles();
-    if (this.vehicles.length > 0) {
-      this.selectedVehicle = this.vehicles[0];
-    }
-  }
-
-  // Obtener la fecha y hora local en formato ISO
   getLocalISOTime(): string {
-    const tzoffset = (new Date()).getTimezoneOffset() * 60000;
-    return (new Date(Date.now() - tzoffset)).toISOString().slice(0, -1);
+    const now = new Date();
+    const tzoffset = now.getTimezoneOffset() * 60000;
+    return (new Date(Date.now() - tzoffset)).toISOString().slice(0, 16);
   }
 
-  // Actualizar comunas cuando cambia la sede
-  onSedeChange() {
-    this.regionOrigen = this.locationService.getRegionBySede(this.sedeOrigen) || '';
-    this.comunasDestino = this.locationService.getComunasByRegion(this.regionOrigen);
-  }
-
-  // Método principal para programar un viaje
-  async programarViaje() {
-    if (this.viajeForm.invalid) {
-      Object.keys(this.viajeForm.controls).forEach((field) => {
-        const control = this.viajeForm.controls[field];
-        control.markAsTouched({ onlySelf: true });
-      });
-      await this.mostrarToast('Por favor, corrige los errores en el formulario', 'warning');
-      return;
-    }
-
-    // Crear el objeto del nuevo viaje
-    const nuevoViaje: Viaje = {
-      id: 0,
-      origen: this.sedeOrigen,
-      destino: this.comunaDestino,
-      fecha: this.fecha,
-      hora: this.viajeForm.value.hora,
-      asientosDisponibles: this.asientosDisponibles,
-      precio: this.precio,
-      conductorNombre: this.authService.getUsername(),
-      patente: this.selectedVehicle ? this.selectedVehicle.patente : this.patente,
-      vehiculo: this.selectedVehicle || null,
-      estado: 'disponible',
-      pasajeros: []
-    };
-
+  async ngOnInit() {
     try {
-      await this.viajeService.programarViaje(nuevoViaje).toPromise();
-      await this.mostrarToast('Viaje programado con éxito', 'success');
-      this.router.navigate(['/conductor-dashboard']);
+      this.sedes = this.locationService.getSedes();
+      this.fechaMinima = this.getLocalISOTime();
+      const vehiculos = await this.authService.getVehiculos().toPromise();
+      this.vehicles = vehiculos || [];
+      if (this.vehicles.length > 0) {
+        this.selectedVehicle = this.vehicles[0];
+      }
     } catch (error) {
-      console.error('Error al programar viaje:', error);
-      await this.mostrarToast('Error al programar el viaje', 'danger');
+      this.presentToast('Error al cargar datos', 'danger');
     }
   }
 
-  // Métodos para manejar vehículos
+  onSedeChange() {
+    // Implementar lógica cuando cambia la sede
+    if (this.sedeOrigen) {
+      const sede = this.sedes.find(s => s.nombre === this.sedeOrigen);
+      if (sede) {
+        this.regionOrigen = sede.region;
+        this.comunasDestino = this.locationService.getComunas(sede.region);
+      }
+    }
+  }
+
   toggleAddVehicleForm() {
     this.showAddVehicleForm = !this.showAddVehicleForm;
   }
 
-  async addVehicle() {
-    const success = await this.authService.addVehicle(this.newVehicle);
-    if (success) {
-      this.vehicles = await this.authService.getVehicles();
-      this.selectedVehicle = this.newVehicle;
-      this.newVehicle = { modeloVehiculo: '', patente: '', licencia: '' };
-      this.showAddVehicleForm = false;
-      await this.mostrarToast('Vehículo agregado con éxito', 'success');
+  async programarViaje() {
+    if (!this.validarFormulario()) return;
+
+    try {
+      const viaje: Partial<Viaje> = {
+        origen: this.origen,
+        destino: this.destino,
+        fecha: this.fecha,
+        hora: this.hora,
+        asientosDisponibles: this.asientosDisponibles,
+        precio: this.precio,
+        conductorNombre: await this.authService.getUsername(),
+        estado: 'disponible',
+        vehiculo: {
+          modeloVehiculo: this.selectedVehicle?.modeloVehiculo || '',
+          patente: this.selectedVehicle?.patente || ''
+        },
+        pasajeros: []
+      };
+
+      await this.viajeService.programarViaje(viaje as Viaje).toPromise();
+      this.presentToast('Viaje programado exitosamente', 'success');
+      this.router.navigate(['/conductor-dashboard']);
+    } catch (error) {
+      this.presentToast('Error al programar el viaje', 'danger');
     }
   }
 
-  // Utilidad para mostrar mensajes toast
-  private async mostrarToast(mensaje: string, color: string) {
+  validarFormulario(): boolean {
+    if (!this.origen || !this.destino || !this.fecha || !this.hora || !this.selectedVehicle) {
+      this.presentToast('Por favor complete todos los campos', 'warning');
+      return false;
+    }
+    return true;
+  }
+
+  async addNewVehicle() {
+    let loading: HTMLIonLoadingElement | null = null;
+    try {
+      if (!this.newVehicle.modeloVehiculo || !this.newVehicle.patente || !this.newVehicle.licencia) {
+        this.presentToast('Por favor complete todos los campos del vehículo', 'warning');
+        return;
+      }
+
+      loading = await this.loadingController.create({
+        message: 'Guardando vehículo...'
+      });
+      await loading.present();
+
+      await this.authService.addVehiculo(this.newVehicle).toPromise();
+      const vehiculos = await this.authService.getVehiculos().toPromise();
+      this.vehicles = vehiculos || [];
+      
+      this.newVehicle = {
+        modeloVehiculo: '',
+        patente: '',
+        licencia: ''
+      };
+      
+      this.showAddVehicleForm = false;
+      this.presentToast('Vehículo agregado exitosamente', 'success');
+
+    } catch (error) {
+      console.error('Error al agregar vehículo:', error);
+      this.presentToast('Error al agregar vehículo', 'danger');
+    } finally {
+      if (loading) {
+        await loading.dismiss();
+      }
+    }
+  }
+
+  async presentToast(message: string, color: string) {
     const toast = await this.toastController.create({
-      message: mensaje,
+      message,
       duration: 2000,
-      color: color
+      color,
+      position: 'bottom'
     });
     await toast.present();
   }

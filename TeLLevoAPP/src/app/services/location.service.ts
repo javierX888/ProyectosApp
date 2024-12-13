@@ -1,21 +1,5 @@
 import { Injectable } from '@angular/core';
-
-interface Sede {
-  sede: string;
-  comuna: string;
-  region: string;
-}
-
-interface Comuna {
-  nombre: string;
-  sedes: string[];
-}
-
-interface Region {
-  id: number;
-  nombre: string;
-  comunas: Comuna[];
-}
+import { Region, Comuna, Sede } from '../interfaces/sede.interface';
 
 @Injectable({
   providedIn: 'root'
@@ -56,12 +40,16 @@ export class LocationService {
     return this.regiones.flatMap((region: Region) => 
       region.comunas.flatMap((comuna: Comuna) => 
         comuna.sedes.map((sede: string) => ({
-          sede,
+          nombre: sede,
           comuna: comuna.nombre,
           region: region.nombre
         }))
       )
     );
+  }
+
+  getComunas(region: string): string[] {
+    return this.getComunasByRegion(region);
   }
 
   getRegionBySede(sede: string): string | null {

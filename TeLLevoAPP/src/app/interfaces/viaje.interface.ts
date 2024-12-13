@@ -11,21 +11,21 @@ export interface Sede {
   comuna: string;
 }
 
+export type EstadoViaje = 'disponible' | 'reservado' | 'aceptado' | 'cancelado' | 'completado' | 'activo';
+
 export interface Viaje {
   id: number;
   origen: string;
   destino: string;
   fecha: string;
   hora: string;
-  patente?: string;
   asientosDisponibles: number;
   precio: number;
   conductorNombre: string;
-  estado: 'disponible' | 'reservado' | 'aceptado' | 'cancelado' | 'completado';
-  vehiculo?: {
+  estado: EstadoViaje;
+  vehiculo: {
     modeloVehiculo: string;
     patente: string;
   };
   pasajeros: string[];
-  pasajeroNombre?: string;
 }

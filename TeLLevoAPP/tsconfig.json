@@ -1,22 +1,35 @@
 {
   "compilerOptions": {
-    "target": "es2018",
-    "module": "esnext", 
-    "lib": ["es2018", "esnext.asynciterable"],
+    "target": "es2020",
+    "module": "es2020",
+    "lib": [
+      "es2020",
+      "dom",
+      "dom.iterable",
+      "scripthost"
+    ],
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "moduleResolution": "node",
     "outDir": "./dist",
     "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
     "strict": true,
     "skipLibCheck": true,
     "sourceMap": true,
     "baseUrl": ".",
     "paths": {
       "*": ["node_modules/*"]
-    }
+    },
+    "types": [
+      "node",
+      "jasmine"
+    ]
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist"]
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }

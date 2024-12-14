@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { ViajeService } from './viaje.service';
 import { Viaje } from '../interfaces/viaje.interface';
-import { environment } from 'src/environments/environment';
+import { environment } from '../../environments/environment';
 
 describe('ViajeService', () => {
   let service: ViajeService;

@@ -37,15 +37,11 @@ export class ViajesProgramadosPage implements OnInit {
 
   cargarViajesProgramados(): void {
     const username = this.authService.getUsername();
-    this.viajeService.getViajesProgramados(username).subscribe({
-      next: (viajes: Viaje[]) => {
-        this.viajesProgramados = viajes;
-        this.clasificarViajes(viajes);
-      },
-      error: (error: ErrorResponse) => {
-        console.error('Error al cargar viajes:', error);
-        this.presentToast('Error al cargar viajes.', 'danger');
-      }
+    this.viajeService.getViajesProgramados().subscribe((value: Object) => {
+      const viajes = value as Viaje[];
+      // aquí viajes es un Viaje[]
+    }, error => {
+      console.error(error);
     });
   }
 

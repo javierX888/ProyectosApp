@@ -48,11 +48,14 @@ export class ConductorDashboardPage implements OnInit {
 
   async cargarDatosUsuario() {
     try {
+      console.log('Iniciando carga de datos de usuario...');
       const perfil = await this.authService.getProfile().toPromise();
+      console.log('Perfil obtenido:', perfil);
       this.nombreUsuario = perfil.nombre || '';
       this.email = perfil.email || '';
       this.profileImage = perfil.imagen || null;
     } catch (error) {
+      console.error('Error detallado al cargar datos del usuario:', error);
       this.presentToast('Error al cargar datos del usuario', 'danger');
     }
   }
@@ -63,15 +66,26 @@ export class ConductorDashboardPage implements OnInit {
         message: 'Agregando vehículo...'
       });
       await loading.present();
-
+  
       try {
-        await this.authService.addVehiculo(this.vehiculoForm.value).toPromise();
+        // Obtener el ID del conductor del token
+        const userData = this.authService.currentUserValue;
+        const vehiculoData = {
+          ...this.vehiculoForm.value,
+          conductorId: userData?.id // Añadir el ID del conductor
+        };
+  
+        console.log('Datos del vehículo a agregar:', vehiculoData);
+        const response = await this.authService.addVehiculo(vehiculoData).toPromise();
+        console.log('Respuesta al agregar vehículo:', response);
+        
         await this.cargarVehiculos();
         this.showAddVehicleForm = false;
         this.vehiculoForm.reset();
         this.presentToast('Vehículo agregado exitosamente', 'success');
-      } catch (error) {
-        this.presentToast('Error al agregar vehículo', 'danger');
+      } catch (error: any) {
+        console.error('Error detallado al agregar vehículo:', error);
+        this.presentToast(error.error?.message || 'Error al agregar vehículo', 'danger');
       } finally {
         await loading.dismiss();
       }
@@ -90,16 +104,19 @@ export class ConductorDashboardPage implements OnInit {
 
   async cargarVehiculos() {
     try {
+      console.log('Iniciando carga de vehículos...');
       const vehiculos = await this.authService.getVehiculos().toPromise();
+      console.log('Vehículos obtenidos:', vehiculos);
       this.vehicles = vehiculos || [];
     } catch (error) {
+      console.error('Error detallado al cargar vehículos:', error);
       this.presentToast('Error al cargar vehículos', 'danger');
     }
   }
 
   async cargarEstadisticas() {
     try {
-      const viajes = await this.viajeService.getViajesConductor(this.email).toPromise() ?? [];
+      const viajes = await this.viajeService.getViajesConductor().toPromise() ?? [];
       this.viajesActivos = viajes.filter((v: Viaje) => 
         v.estado === 'aceptado' || v.estado === 'reservado'
       ).length;
@@ -114,12 +131,12 @@ export class ConductorDashboardPage implements OnInit {
 
   async cargarViajesProgramados() {
     try {
-      const viajes = await this.viajeService.getViajesProgramados(this.email).toPromise() ?? [];
+      const viajes = await this.viajeService.getViajesProgramados().toPromise() ?? [];
       this.viajesProgramados = viajes;
     } catch (error) {
       this.presentToast('Error al cargar viajes programados', 'danger');
       this.viajesProgramados = [];
-    }
+    }  
   }
 
   toggleAddVehicleForm() {

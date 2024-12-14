@@ -4,14 +4,14 @@ import { Observable, of } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { Viaje } from '../interfaces/viaje.interface';
+import { AuthService } from './auth.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ViajeService {
-  private apiUrl = environment.apiUrl;
-
-  constructor(private http: HttpClient) {}
+  private apiUrl = 'https://tellevoapp-api-production.up.railway.app/api';
+  constructor(private http: HttpClient, private authService: AuthService) {}
 
   async getViajes(): Promise<Viaje[]> {
     try {
@@ -49,15 +49,14 @@ export class ViajeService {
     );
   }
 
-  getViajesProgramados(username: string): Observable<Viaje[]> {
-    return this.http.get<Viaje[]>(`${this.apiUrl}/conductor/${username}/viajes`).pipe(
-      map((viajes: Viaje[]) => viajes || []),
-      catchError((error: HttpErrorResponse) => {
-        console.error('Error:', error);
-        return of([]);
-      })
-    );
-  }
+  getViajesProgramados(): Observable<Viaje[]> {
+    const userData = this.authService.currentUserValue;
+    return this.http.get<Viaje[]>(`${this.apiUrl}/viajes/programados`, {
+      headers: {
+        'Authorization': `Bearer ${userData?.token}`
+      }
+    });
+  }  
 
   getViajesReservados(email: string): Observable<Viaje[]> {
     return this.http.get<Viaje[]>(`${this.apiUrl}/pasajero/${email}/viajes`).pipe(
@@ -77,14 +76,14 @@ export class ViajeService {
     );
   }
 
-  getViajesConductor(email: string): Observable<Viaje[]> {
-    return this.http.get<Viaje[]>(`${this.apiUrl}/viajes/conductor/${email}`).pipe(
-      catchError((error: HttpErrorResponse) => {
-        console.error('Error:', error);
-        return of([]);
-      })
-    );
-  }
+  getViajesConductor(): Observable<Viaje[]> {
+    const userData = this.authService.currentUserValue;
+    return this.http.get<Viaje[]>(`${this.apiUrl}/viajes/conductor`, {
+      headers: {
+        'Authorization': `Bearer ${userData?.token || ''}`
+      }
+    });
+  }  
 
   programarViaje(viaje: Viaje): Observable<Viaje> {
     return this.http.post<Viaje>(`${this.apiUrl}/viajes`, viaje).pipe(

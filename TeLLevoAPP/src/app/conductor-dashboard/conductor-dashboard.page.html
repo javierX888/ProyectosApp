@@ -74,26 +74,29 @@
     </ion-card-header>
 
     <ion-card-content>
-      <!-- Formulario para agregar vehículo -->
-      <div *ngIf="showAddVehicleForm" class="form-container">
-        <ion-list>
-          <ion-item>
-            <ion-label position="floating">Modelo del Vehículo</ion-label>
-            <ion-input [(ngModel)]="newVehicle.modeloVehiculo" required></ion-input>
-          </ion-item>
-          <ion-item>
-            <ion-label position="floating">Patente</ion-label>
-            <ion-input [(ngModel)]="newVehicle.patente" required></ion-input>
-          </ion-item>
-          <ion-item>
-            <ion-label position="floating">Licencia</ion-label>
-            <ion-input [(ngModel)]="newVehicle.licencia" required></ion-input>
-          </ion-item>
-        </ion-list>
-        <ion-button expand="block" (click)="addVehicle()" class="ion-margin-top">
-          Guardar Vehículo
-        </ion-button>
-      </div>
+  <!-- Formulario para agregar vehículo -->
+  <div *ngIf="showAddVehicleForm" class="form-container">
+    <form [formGroup]="vehiculoForm">
+      <ion-list>
+        <ion-item>
+          <ion-label position="floating">Modelo del Vehículo</ion-label>
+          <ion-input formControlName="modeloVehiculo"></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-label position="floating">Patente</ion-label>
+          <ion-input formControlName="patente"></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-label position="floating">Licencia</ion-label>
+          <ion-input formControlName="licencia"></ion-input>
+        </ion-item>
+      </ion-list>
+      <ion-button expand="block" (click)="addVehicle()" class="ion-margin-top" 
+                  [disabled]="!vehiculoForm.valid">
+        Guardar Vehículo
+      </ion-button>
+    </form>
+  </div>
 
       <!-- Lista de vehículos -->
       <ion-list *ngIf="vehicles.length > 0">

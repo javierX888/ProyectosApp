@@ -17,8 +17,8 @@
           #sedeOrigenRef="ngModel"
           (ionChange)="onSedeChange()"
         >
-          <ion-select-option *ngFor="let sede of sedes" [value]="sede.sede">
-            {{ sede.sede }}
+          <ion-select-option *ngFor="let sede of sedes" [value]="sede.nombre">
+            {{ sede.nombre }}
           </ion-select-option>
         </ion-select>
       </ion-item>
